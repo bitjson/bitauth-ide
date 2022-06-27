@@ -1,5 +1,5 @@
 import {
-  importAuthenticationTemplate,
+  ideImportAuthenticationTemplate,
   exportAuthenticationTemplate,
 } from './import-export';
 import { AuthenticationTemplate } from '@bitauth/libauth';
@@ -61,7 +61,7 @@ const twoOfTwoRecoverableTemplate: AuthenticationTemplate = {
   },
   scripts: {
     lock: {
-      lockingType: 'p2sh',
+      lockingType: 'p2sh20',
       name: '2-of-2 Recoverable Vault',
       script:
         'OP_IF\n  <$(\n    <current_block_time> <delay_seconds>\n    OP_ADD\n  )>\n  OP_CHECKLOCKTIMEVERIFY OP_DROP\n  <trusted.public_key>\n  OP_CHECKSIGVERIFY\n  <1>\nOP_ELSE\n  <2>\nOP_ENDIF\n<first.public_key> <second.public_key> <2>\nOP_CHECKMULTISIG',
@@ -87,7 +87,7 @@ const twoOfTwoRecoverableTemplate: AuthenticationTemplate = {
       unlocks: 'lock',
     },
   },
-  supported: ['BCH_2019_11'],
+  supported: ['BCH_2022_05'],
   version: 0,
 };
 
@@ -131,7 +131,7 @@ const twoOfTwoRecoverableIDETemplate: IDETemplate = {
       childInternalIds: ['ID-4', 'ID-5', 'ID-6'],
       id: 'lock',
       internalId: 'ID-3',
-      isP2SH: true,
+      lockingType: 'p2sh20',
       name: '2-of-2 Recoverable Vault',
       script: twoOfTwoRecoverableTemplate.scripts['lock'].script,
       type: 'locking',
@@ -177,7 +177,7 @@ const twoOfTwoRecoverableIDETemplate: IDETemplate = {
     },
   },
   scenariosByInternalId: {},
-  supportedVirtualMachines: ['BCH_2019_11'],
+  supportedVirtualMachines: ['BCH_2022_05'],
   variablesByInternalId: {
     'ID-10': {
       description: '',
@@ -219,7 +219,7 @@ it('importAuthenticationTemplate (deterministic IDs)', () => {
     return id;
   };
 
-  const result = importAuthenticationTemplate(
+  const result = ideImportAuthenticationTemplate(
     twoOfTwoRecoverableTemplate,
     generateId
   );
@@ -227,7 +227,7 @@ it('importAuthenticationTemplate (deterministic IDs)', () => {
 });
 
 it('importAuthenticationTemplate -> exportAuthenticationTemplate (random IDs)', () => {
-  const result = importAuthenticationTemplate(twoOfTwoRecoverableTemplate);
+  const result = ideImportAuthenticationTemplate(twoOfTwoRecoverableTemplate);
   if (typeof result === 'string') {
     fail(result);
   }

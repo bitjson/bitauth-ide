@@ -1,21 +1,14 @@
 import {
-  AuthenticationProgramBCH,
-  AuthenticationProgramStateBCH,
   AuthenticationTemplateVariable,
-  AuthenticationVirtualMachine,
   AuthenticationVirtualMachineIdentifier,
-  Sha256,
-  Secp256k1,
   AuthenticationTemplate,
   AuthenticationTemplateScriptUnlocking,
   AuthenticationTemplateScenario,
-  Ripemd160,
-  Sha512,
   Scenario,
+  AuthenticationTemplateScriptLocking,
 } from '@bitauth/libauth';
 import { EvaluationViewerSettings } from '../editor/editor-types';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
-import { AuthenticationProgramStateBCHTxInt } from '../init/txint-vm';
 
 export enum IDEMode {
   /**
@@ -172,17 +165,7 @@ export interface IDETemplateUnlockingScript
 
 export interface IDETemplateLockingScript extends IDETemplateScriptBase {
   type: 'locking';
-  /**
-   * Indicates if this locking script and all of its children are `P2SH`.
-   *
-   * During editing, we only visualize and evaluate the unwrapped version of the
-   * P2SH unlocking and locking scripts (A.K.A. "spend script" and "redeem
-   * script") since evaluation of the P2SH "template"
-   * (`OP_HASH160 <$(<result> OP_HASH160)> OP_EQUAL`) will always happen in the
-   * same way. When an exported template is compiled, the P2SH infrastructure
-   * will be added to the final result.
-   */
-  isP2SH: boolean;
+  lockingType: AuthenticationTemplateScriptLocking['lockingType'];
   childInternalIds: string[];
 }
 
@@ -251,50 +234,14 @@ export type IDETemplateScript =
 export type DisableId = true;
 
 export type IDESupportedVM =
-  | 'BCH_2022_05_SPEC'
-  | 'BCH_2020_05'
+  | 'BCH_2022_05'
+  | 'BCH_SPEC'
   | 'BSV_2020_02'
   | 'BTC_2017_08';
 export type IDEUnsupportedVM = Exclude<
   AuthenticationVirtualMachineIdentifier,
   IDESupportedVM
 >;
-
-export type IDESupportedVmStore = { [key in IDESupportedVM]: any };
-
-/**
- * TODO: support other VMs
- */
-export interface IDELoadedVMs extends IDESupportedVmStore {
-  BCH_2022_05_SPEC: AuthenticationVirtualMachine<
-    AuthenticationProgramBCH,
-    AuthenticationProgramStateBCHTxInt
-  >;
-  BCH_2020_05: AuthenticationVirtualMachine<
-    AuthenticationProgramBCH,
-    AuthenticationProgramStateBCH
-  >;
-  BSV_2020_02: AuthenticationVirtualMachine<
-    AuthenticationProgramBCH,
-    AuthenticationProgramStateBCH
-  >;
-  BTC_2017_08: AuthenticationVirtualMachine<
-    AuthenticationProgramBCH,
-    AuthenticationProgramStateBCH
-  >;
-}
-
-export interface IDELoadedCrypto {
-  ripemd160: Ripemd160;
-  sha256: Sha256;
-  sha512: Sha512;
-  secp256k1: Secp256k1;
-}
-
-export interface IDELoadedVMsAndCrypto {
-  crypto: IDELoadedCrypto;
-  vms: IDELoadedVMs;
-}
 
 /**
  * The application dialogs which are managed by Redux.
@@ -427,10 +374,8 @@ export interface AppState {
    * is hard for users to understand intuitively.
    */
   lastSelectedScenarioInternalId: string | undefined;
-  currentVmId: keyof IDELoadedVMs;
+  currentVmId: IDESupportedVM;
   evaluationViewerSettings: EvaluationViewerSettings;
-  authenticationVirtualMachines: IDELoadedVMs | null;
-  crypto: IDELoadedCrypto | null;
   activeDialog: ActiveDialog;
   /**
    * Date from the moment this template was loaded. Set to `undefined` if no

@@ -2,7 +2,15 @@ import {
   AuthenticationProgramCommon,
   CompilationResult,
   EvaluationSample,
-  AuthenticationProgramStateCommon,
+  AuthenticationTemplateScriptLocking,
+  AuthenticationProgramStateAlternateStack,
+  AuthenticationProgramStateControlStack,
+  AuthenticationProgramStateError,
+  AuthenticationProgramStateMinimum,
+  AuthenticationProgramStateStack,
+  AuthenticationProgramStateCodeSeparator,
+  AuthenticationProgramStateSignatureAnalysis,
+  AuthenticationProgramStateTransactionContext,
 } from '@bitauth/libauth';
 import {
   IDETemplateScript,
@@ -42,11 +50,6 @@ export enum ProjectEditorMode {
    * authentication template.
    */
   templateSettingsEditor = 'templateSettingsEditor',
-  /**
-   * The state of the editor before async dependencies (VMs and crypto) have
-   * loaded, or if nothing is currently selected for editing.
-   */
-  loading = 'loading',
   /**
    * The view visible while the IDE is importing a template from a remote URL.
    */
@@ -95,8 +98,14 @@ export enum ScriptEvaluationViewerPane {
  */
 export type StackItemIdentifyFunction = (value: Uint8Array) => string | false;
 
-export interface IDESupportedProgramState
-  extends AuthenticationProgramStateCommon<number, string> {}
+export type IDESupportedProgramState = AuthenticationProgramStateMinimum &
+  AuthenticationProgramStateStack &
+  AuthenticationProgramStateAlternateStack &
+  AuthenticationProgramStateControlStack<boolean | number> &
+  AuthenticationProgramStateError &
+  AuthenticationProgramStateCodeSeparator &
+  AuthenticationProgramStateSignatureAnalysis &
+  AuthenticationProgramStateTransactionContext;
 
 export interface IDESupportedAuthenticationProgram
   extends AuthenticationProgramCommon {}
@@ -159,7 +168,7 @@ export interface ScriptEditorFrame<
   /**
    * `samples` is undefined if there are compilation errors.
    */
-  samples: EvaluationSample<ProgramState, number>[] | undefined;
+  samples: EvaluationSample<ProgramState>[] | undefined;
   scriptName: string;
   scriptId: string;
   scriptInternalId: string;
@@ -185,16 +194,14 @@ export interface EvaluationViewerComputedState {
   lookup?: StackItemIdentifyFunction;
 }
 
-export type ComputedEditorState<
-  ProgramState extends IDESupportedProgramState
-> =
-  | EditorStateWelcomeMode
-  | EditorStateTemplateSettingsMode
-  | EditorStateEntityMode
-  | EditorStateScriptMode<ProgramState>
-  | EditorStateLoadingMode
-  | EditorStateImportingMode
-  | EditorStateWalletMode;
+export type ComputedEditorState<ProgramState extends IDESupportedProgramState> =
+
+    | EditorStateWelcomeMode
+    | EditorStateTemplateSettingsMode
+    | EditorStateEntityMode
+    | EditorStateScriptMode<ProgramState>
+    | EditorStateImportingMode
+    | EditorStateWalletMode;
 
 interface EditorStateEntityMode {
   editorMode: ProjectEditorMode.entityEditor;
@@ -212,9 +219,6 @@ interface EditorStateTemplateSettingsMode {
   editorMode: ProjectEditorMode.templateSettingsEditor;
 }
 
-interface EditorStateLoadingMode {
-  editorMode: ProjectEditorMode.loading;
-}
 interface EditorStateImportingMode {
   editorMode: ProjectEditorMode.importing;
 }
@@ -222,6 +226,7 @@ interface EditorStateImportingMode {
 export interface EditorStateScriptMode<
   ProgramState extends IDESupportedProgramState
 > {
+  debugTrace?: IDESupportedProgramState[];
   editorMode:
     | ProjectEditorMode.isolatedScriptEditor
     | ProjectEditorMode.testedScriptEditor
@@ -238,7 +243,7 @@ export interface EditorStateScriptMode<
    * the EvaluationViewer to recognize viable updates to its cache.
    */
   scriptEditorEvaluationSource: string[];
-  isP2sh: boolean;
+  lockingType: AuthenticationTemplateScriptLocking['lockingType'];
   isPushed: boolean;
   /**
    * Set to `undefined` if no compilations were successful (so the previous

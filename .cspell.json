@@ -1,9 +1,10 @@
 {
-  "version": "0.1",
+  "version": "0.2",
   "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/master/cspell.schema.json",
   "language": "en",
   "words": [
     "Autosave",
+    "BCHCHIPs",
     "Bitauth",
     "hellip",
     "IDEUTXOs",
@@ -13,6 +14,9 @@
     "OUTPOINTINDEX",
     "OUTPOINTTXHASH",
     "OUTPUTBYTECODE",
+    "OUTPUTTOKENAMOUNT",
+    "OUTPUTTOKENCATEGORY",
+    "OUTPUTTOKENCOMMITMENT",
     "OUTPUTVALUE",
     "overscroll",
     "pako",
@@ -26,9 +30,16 @@
     "utxo",
     "UTXO's",
     "UTXOBYTECODE",
+    "UTXOTOKENAMOUNT",
+    "UTXOTOKENCATEGORY",
+    "UTXOTOKENCOMMITMENT",
     "UTXOVALUE",
     "VARINT"
   ],
   "flagWords": [],
-  "ignorePaths": ["package.json", "yarn.lock", "tsconfig.json"]
+  "ignorePaths": [
+    "package.json",
+    "yarn.lock",
+    "tsconfig.json"
+  ]
 }

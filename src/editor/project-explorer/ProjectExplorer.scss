@@ -130,12 +130,12 @@
 
 .interface-tooltip {
   $tooltip-background: var(--editor-background-color);
-  .bp3-popover-content {
+  .bp4-popover-content {
     background: $tooltip-background !important;
     color: #fff !important;
   }
-  .bp3-popover-arrow-fill,
-  .bp3-popover-arrow-border {
+  .bp4-popover-arrow-fill,
+  .bp4-popover-arrow-border {
     fill: $tooltip-background !important;
     fill-opacity: 1;
   }

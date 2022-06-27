@@ -8,7 +8,6 @@ import {
   EvaluationSample,
   Range,
   range,
-  AuthenticationProgramStateExecutionStack,
   containsRange,
 } from '@bitauth/libauth';
 
@@ -22,10 +21,10 @@ export interface MonacoMarkerDataRequired {
 }
 
 const getExecutionSpacers = (
-  executionStack: AuthenticationProgramStateExecutionStack['executionStack']
+  controlStack: IDESupportedProgramState['controlStack']
 ) =>
-  executionStack.map((isExecuting) =>
-    isExecuting
+  controlStack.map((isExecuting) =>
+    isExecuting === true
       ? EvaluationViewerSpacer.executedConditional
       : EvaluationViewerSpacer.skippedConditional
   );
@@ -36,8 +35,7 @@ const getExecutionSpacers = (
  * sample will be empty)
  */
 export const samplesToEvaluationLines = <
-  ProgramState extends IDESupportedProgramState,
-  Opcodes
+  ProgramState extends IDESupportedProgramState
 >(
   samples: EvaluationSample<ProgramState>[],
   totalLines: number
@@ -60,10 +58,9 @@ export const samplesToEvaluationLines = <
       spacers: EvaluationViewerSpacer[];
     };
   }>((evaluations, sample) => {
-    const parentEvaluations = Object.entries(
-      evaluations
-    ).filter(([beginLineAndColumn, value]) =>
-      containsRange(value.evaluationRange, sample.evaluationRange)
+    const parentEvaluations = Object.entries(evaluations).filter(
+      ([beginLineAndColumn, value]) =>
+        containsRange(value.evaluationRange, sample.evaluationRange)
     );
     /**
      * Samples are already sorted, so the last item is always the direct
@@ -98,7 +95,7 @@ export const samplesToEvaluationLines = <
                 ...(parentEvaluation === rootIdentifier
                   ? []
                   : [EvaluationViewerSpacer.evaluation]),
-                ...getExecutionSpacers(sample.state.executionStack),
+                ...getExecutionSpacers(sample.state.controlStack),
               ],
             },
           }),
@@ -128,7 +125,7 @@ export const samplesToEvaluationLines = <
         uniqueEvaluations[evaluationIdentifier(sample.evaluationRange)];
       const spacers = [
         ...parentEvaluation.spacers,
-        ...getExecutionSpacers(sample.state.executionStack),
+        ...getExecutionSpacers(sample.state.controlStack),
       ];
       return {
         hasError: sample.state.error !== undefined,
@@ -161,9 +158,8 @@ export const samplesToEvaluationLines = <
         ) ?? initialStateIndex
       );
       const lineHasNewSample = mostRecentDefinedLineNumber === lineNumber;
-      const { sample, spacers } = finalLineContents.lines[
-        mostRecentDefinedLineNumber
-      ];
+      const { sample, spacers } =
+        finalLineContents.lines[mostRecentDefinedLineNumber];
       const line: EvaluationViewerLine<ProgramState> = {
         spacers,
         ...(lineHasNewSample ? { state: sample.state } : {}),

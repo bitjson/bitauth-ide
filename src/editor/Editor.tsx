@@ -36,7 +36,6 @@ enum Pane {
   templateSettingsEditor = 'templateSettingsEditorPane',
   entitySettingsEditor = 'entitySettingsEditorPane',
   entityVariableEditor = 'entityVariableEditorPane',
-  loading = 'loading',
   importing = 'importing',
   welcome = 'welcome',
   walletEditor = 'walletEditor',
@@ -122,17 +121,17 @@ export const Editor = connect(
   const [viewerElementFrame3, setViewerElementFrame3] = useState<
     HTMLDivElement | undefined
   >(undefined);
-  const viewerRefCallbackFrame1 = useCallback((node) => {
+  const viewerRefCallbackFrame1 = useCallback((node: HTMLDivElement | null) => {
     if (node !== null) {
       setViewerElementFrame1(node);
     }
   }, []);
-  const viewerRefCallbackFrame2 = useCallback((node) => {
+  const viewerRefCallbackFrame2 = useCallback((node: HTMLDivElement | null) => {
     if (node !== null) {
       setViewerElementFrame2(node);
     }
   }, []);
-  const viewerRefCallbackFrame3 = useCallback((node) => {
+  const viewerRefCallbackFrame3 = useCallback((node: HTMLDivElement | null) => {
     if (node !== null) {
       setViewerElementFrame3(node);
     }
@@ -157,7 +156,7 @@ export const Editor = connect(
       deleteScript={props.deleteScript}
       editScript={props.editScript}
       frame={computed.scriptEditorFrames[indexFromTop]}
-      isP2SH={computed.isP2sh}
+      isP2SH={computed.lockingType === 'p2sh20'}
       isPushed={computed.isPushed}
       scriptDetails={computed.scriptDetails}
       setCursorLine={setCursorLine[indexFromTop]}
@@ -181,6 +180,7 @@ export const Editor = connect(
       }}
       changeEvaluationViewerSettings={props.changeEvaluationViewerSettings}
       cursorLine={cursorLine[indexFromTop]}
+      debugTrace={computed.debugTrace}
       evaluationViewerSettings={props.evaluationViewerSettings}
       importExport={props.importExport}
       scenarioDetails={computed.scenarioDetails}
@@ -193,11 +193,10 @@ export const Editor = connect(
   return (
     <div className="Editor">
       <Mosaic<Pane | ScriptEditorPane | ScriptEvaluationViewerPane>
-        className="mosaic-blueprint-theme bp3-dark"
+        className="mosaic-blueprint-theme bp4-dark"
         renderTile={(id) => {
-          const computed = props.computed as EditorStateScriptMode<
-            IDESupportedProgramState
-          >;
+          const computed =
+            props.computed as EditorStateScriptMode<IDESupportedProgramState>;
           switch (id) {
             case Pane.projectExplorer:
               return <ProjectExplorer />;
@@ -234,8 +233,6 @@ export const Editor = connect(
               return <TemplateSettings />;
             case Pane.welcome:
               return <WelcomePane />;
-            case Pane.loading:
-              return <div className="loading" />;
             case Pane.importing:
               return <div className="loading" />;
             case Pane.walletEditor:
@@ -254,8 +251,6 @@ export const Editor = connect(
         value={
           props.computed.editorMode === ProjectEditorMode.welcome
             ? Pane.welcome
-            : props.computed.editorMode === ProjectEditorMode.loading
-            ? Pane.loading
             : props.computed.editorMode === ProjectEditorMode.importing
             ? Pane.importing
             : props.computed.editorMode === ProjectEditorMode.wallet

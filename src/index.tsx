@@ -1,10 +1,10 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
 import './index.scss';
 import { App } from './App';
 import * as serviceWorker from './serviceWorker';
 import { Provider, configureStore } from './state/store';
 import LogRocket from 'logrocket';
+import { createRoot } from 'react-dom/client';
 
 if (process.env.NODE_ENV === 'production') {
   LogRocket.init('wkulwl/bitauth-ide');
@@ -12,10 +12,7 @@ if (process.env.NODE_ENV === 'production') {
 
 const store = configureStore();
 
-const root = ((ReactDOM as any)
-  .unstable_createRoot as typeof ReactDOM.createRoot)(
-  document.getElementById('root') as HTMLElement
-);
+const root = createRoot(document.getElementById('root')!);
 if (process.env.NODE_ENV === 'development') {
   console.log(
     'Bitauth IDE is running in development mode. Please note, we use an experimental version of React with support for Concurrent Mode. This is supposed to require Strict Mode, which is not yet supported by Blueprint: https://github.com/palantir/blueprint/issues/3979. However, this incompatibility does not appear to cause problems in Bitauth IDE (other than warnings).'

@@ -1,26 +1,24 @@
-import { AppState, ActiveDialog } from './types';
+import { AppState, ActiveDialog, IDESupportedVM } from './types';
 import { IDEMode } from './types';
-import {
-  AuthenticationVirtualMachineIdentifier,
-  AuthenticationTemplate,
-} from '@bitauth/libauth';
-import { importAuthenticationTemplate } from './import-export';
+import { AuthenticationTemplate } from '@bitauth/libauth';
+import { ideImportAuthenticationTemplate } from './import-export';
 import { isImportRoute } from '../init/routing';
+import { bitauthAuthenticationTemplateSchema } from '../editor/constants';
 
 // TODO: finish wallet mode, remove
 export const workingOnWalletMode = false;
 
 export const emptyTemplate: AuthenticationTemplate = {
-  $schema: 'https://bitauth.com/schemas/authentication-template-v0.schema.json',
+  $schema: bitauthAuthenticationTemplateSchema,
   description: '',
   name: 'Untitled',
   entities: {},
   scripts: {},
-  supported: ['BCH_2020_05'] as AuthenticationVirtualMachineIdentifier[],
+  supported: ['BCH_2022_05', 'BCH_SPEC'] as IDESupportedVM[],
   version: 0 as 0,
 };
 
-const defaultTemplate = importAuthenticationTemplate(emptyTemplate);
+const defaultTemplate = ideImportAuthenticationTemplate(emptyTemplate);
 if (typeof defaultTemplate === 'string') {
   throw new Error(`Invalid empty template: ${defaultTemplate}`);
 }
@@ -35,7 +33,7 @@ export const defaultState: AppState = {
   currentScenarioInternalId: undefined,
   lastSelectedScenarioInternalId: undefined,
   currentTemplate: defaultTemplate,
-  currentVmId: 'BCH_2020_05',
+  currentVmId: 'BCH_2022_05',
   evaluationViewerSettings: {
     abbreviateLongStackItems: true,
     groupStackItemsDeeperThan: 3,
@@ -44,8 +42,6 @@ export const defaultState: AppState = {
     showAlternateStack: false,
     identifyStackItems: true,
   },
-  authenticationVirtualMachines: null,
-  crypto: null,
   activeDialog: ActiveDialog.none,
   templateLoadTime: undefined,
   pendingTemplateImport: undefined,

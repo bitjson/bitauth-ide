@@ -29,7 +29,7 @@
     }
 
     .icon,
-    .bp3-icon {
+    .bp4-icon {
       &:focus {
         outline: none;
         color: #fff;
@@ -41,7 +41,7 @@
       text-align: right;
       line-height: 0;
       color: var(--toolbar-icon-color);
-      .bp3-icon:hover {
+      .bp4-icon:hover {
         cursor: pointer;
         color: #fff;
       }

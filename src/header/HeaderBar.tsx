@@ -51,10 +51,11 @@ const ideModes: IDESupportedModes[] = [
 ];
 
 const vms: IDESupportedVirtualMachine[] = [
-  { id: 'BCH_2020_05', name: 'BCH 2020-05 VM', disabled: false },
-  { id: 'BCH_2022_05_SPEC', name: 'BCH TxInt VM', disabled: false },
-  { id: 'BTC_2017_08', name: 'BTC 2017-08 VM', disabled: true },
-  { id: 'BSV_2020_02', name: 'BSV 2020-02 VM', disabled: true },
+  { id: 'BCH_SPEC', name: 'BCH CHIPs VM', disabled: false },
+  { id: 'BCH_2022_05', name: 'BCH 2022 VM', disabled: false },
+  { id: 'BTC_2017_08', name: 'BTC 2017 VM', disabled: true },
+  { id: 'BSV_2020_02', name: 'BSV 2020 VM', disabled: true },
+  { id: 'XEC_2020_05', name: 'XEC 2020 VM', disabled: true },
 ];
 
 const ModeSelect = Select.ofType<IDESupportedModes>();

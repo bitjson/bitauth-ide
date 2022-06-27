@@ -111,7 +111,7 @@ export const EditVariableDialog = ({
   const otherIds = usedIds.filter((usedId) => usedId !== variable?.id);
   return (
     <Dialog
-      className="bp3-dark editor-dialog EditVariableDialog"
+      className="bp4-dark editor-dialog EditVariableDialog"
       onOpening={() => {
         setVariableName(variable?.name ?? '');
         setNameWasModified(false);

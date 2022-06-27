@@ -46,7 +46,7 @@
     }
   }
 
-  .left-section .bp3-popover-wrapper {
+  .left-section .bp4-popover-wrapper {
     line-height: 0 !important;
   }
 
@@ -57,16 +57,16 @@
     }
   }
   .link {
-    .bp3-icon {
+    .bp4-icon {
       margin-right: 6px;
     }
   }
 
-  .bp3-button {
+  .bp4-button {
     background: transparent none !important;
     box-shadow: none !important;
     color: #fff8 !important;
-    .bp3-icon-caret-down {
+    .bp4-icon-caret-down {
       color: #242b2f !important;
     }
   }
@@ -74,13 +74,13 @@
 
 .intro-popover {
   $tooltip-background: var(--interface-background-color);
-  .bp3-popover-content {
+  .bp4-popover-content {
     max-width: 400px !important;
     background: $tooltip-background !important;
     color: #fff !important;
     padding: 12px;
   }
-  .bp3-popover-arrow-fill {
+  .bp4-popover-arrow-fill {
     fill: $tooltip-background !important;
   }
   p {

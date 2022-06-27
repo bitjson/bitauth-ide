@@ -117,75 +117,79 @@ type ActiveHint = {
   hoverContents: monacoEditor.IMarkdownString[];
 };
 
-const updateMarkers = ({
-  compilation,
-  editor,
-  frame,
-  monaco,
-  script,
-  setActiveHints,
-}: {
-  compilation: CompilationResult | undefined;
-  editor: monacoEditor.editor.IStandaloneCodeEditor;
-  frame: ScriptEditorFrame<IDESupportedProgramState>;
-  monaco: typeof monacoEditor;
-  script: string;
-  setActiveHints: React.Dispatch<
-    React.SetStateAction<ActiveHint[] | undefined>
-  >;
-}) => () => {
-  const model = editor.getModel();
-  /**
-   * Avoid updating markers if the script has changed. (This prevents error
-   * markers from flashing on/off while typing.)
-   */
-  if (model !== null && model.getValue() === script) {
-    let markers: MonacoMarkerDataRequired[] = [];
-    let activeHints: ActiveHint[] = [];
-    if (compilation !== undefined && compilation.success !== true) {
-      const raw = compilation.errors.map<MonacoMarkerDataRequired>((error) => ({
-        ...error.range,
-        severity: monacoEditor.MarkerSeverity.Error,
-        message: error.error,
-      }));
-      const cursor = editor.getPosition();
-      const hasFocus = editor.hasTextFocus();
-      /**
-       * Hide the error if this editor is in focus and the cursor is
-       * currently at the end of the error's range (to be less annoying
-       * while typing).*/
-      const markersNotUnderEdit =
-        hasFocus && cursor !== null
-          ? raw.filter((marker) => !cursorIsAtEndOfRange(cursor, marker))
-          : raw;
-
-      const hints = markersNotUnderEdit.reduce((all, marker) => {
-        const helpItem = compilationErrorAssistance.find((item) =>
-          item.regex.test(marker.message)
+const updateMarkers =
+  ({
+    compilation,
+    editor,
+    frame,
+    monaco,
+    script,
+    setActiveHints,
+  }: {
+    compilation: CompilationResult | undefined;
+    editor: monacoEditor.editor.IStandaloneCodeEditor;
+    frame: ScriptEditorFrame<IDESupportedProgramState>;
+    monaco: typeof monacoEditor;
+    script: string;
+    setActiveHints: React.Dispatch<
+      React.SetStateAction<ActiveHint[] | undefined>
+    >;
+  }) =>
+  () => {
+    const model = editor.getModel();
+    /**
+     * Avoid updating markers if the script has changed. (This prevents error
+     * markers from flashing on/off while typing.)
+     */
+    if (model !== null && model.getValue() === script) {
+      let markers: MonacoMarkerDataRequired[] = [];
+      let activeHints: ActiveHint[] = [];
+      if (compilation !== undefined && compilation.success !== true) {
+        const raw = compilation.errors.map<MonacoMarkerDataRequired>(
+          (error) => ({
+            ...error.range,
+            severity: monacoEditor.MarkerSeverity.Error,
+            message: error.error,
+          })
         );
-        if (helpItem !== undefined) {
-          const hint: ActiveHint = {
-            hoverContents: helpItem
-              .generateHints(marker.message, frame)
-              .map((markdown) => ({ value: markdown })),
-            range: {
-              endColumn: marker.endColumn,
-              endLineNumber: marker.endLineNumber,
-              startColumn: marker.startColumn,
-              startLineNumber: marker.startLineNumber,
-            },
-          };
-          return [...all, hint];
-        }
-        return all;
-      }, [] as ActiveHint[]);
-      activeHints = hints;
-      markers = markersNotUnderEdit;
+        const cursor = editor.getPosition();
+        const hasFocus = editor.hasTextFocus();
+        /**
+         * Hide the error if this editor is in focus and the cursor is
+         * currently at the end of the error's range (to be less annoying
+         * while typing).*/
+        const markersNotUnderEdit =
+          hasFocus && cursor !== null
+            ? raw.filter((marker) => !cursorIsAtEndOfRange(cursor, marker))
+            : raw;
+
+        const hints = markersNotUnderEdit.reduce((all, marker) => {
+          const helpItem = compilationErrorAssistance.find((item) =>
+            item.regex.test(marker.message)
+          );
+          if (helpItem !== undefined) {
+            const hint: ActiveHint = {
+              hoverContents: helpItem
+                .generateHints(marker.message, frame)
+                .map((markdown) => ({ value: markdown })),
+              range: {
+                endColumn: marker.endColumn,
+                endLineNumber: marker.endLineNumber,
+                startColumn: marker.startColumn,
+                startLineNumber: marker.startLineNumber,
+              },
+            };
+            return [...all, hint];
+          }
+          return all;
+        }, [] as ActiveHint[]);
+        activeHints = hints;
+        markers = markersNotUnderEdit;
+      }
+      setActiveHints(activeHints);
+      monaco.editor.setModelMarkers(model, '', markers);
     }
-    setActiveHints(activeHints);
-    monaco.editor.setModelMarkers(model, '', markers);
-  }
-};
+  };
 
 export const ScriptEditor = (props: {
   frame: ScriptEditorFrame<IDESupportedProgramState>;
@@ -272,9 +276,8 @@ export const ScriptEditor = (props: {
 
   useEffect(() => {
     if (monaco !== undefined && editor !== undefined) {
-      const compilationErrorAssistanceHoverProvider = monaco.languages.registerHoverProvider(
-        bitauthTemplatingLanguage,
-        {
+      const compilationErrorAssistanceHoverProvider =
+        monaco.languages.registerHoverProvider(bitauthTemplatingLanguage, {
           provideHover: (model, position) => {
             if (!isCorrectScript(model, script)) {
               return;
@@ -291,8 +294,7 @@ export const ScriptEditor = (props: {
               }
             }
           },
-        }
-      );
+        });
       return () => {
         compilationErrorAssistanceHoverProvider.dispose();
       };
@@ -392,10 +394,8 @@ export const ScriptEditor = (props: {
                         range,
                       };
                     case BuiltInVariables.signingSerialization:
-                      const {
-                        description,
-                        name,
-                      } = getSigningSerializationOperationDetails(parts[1]);
+                      const { description, name } =
+                        getSigningSerializationOperationDetails(parts[1]);
                       return {
                         contents: [
                           {
@@ -478,219 +478,225 @@ export const ScriptEditor = (props: {
         }
       );
 
-      const opcodeCompletionProvider = monaco.languages.registerCompletionItemProvider(
-        bitauthTemplatingLanguage,
-        opcodeCompletionItemProviderBCH
-      );
+      const opcodeCompletionProvider =
+        monaco.languages.registerCompletionItemProvider(
+          bitauthTemplatingLanguage,
+          opcodeCompletionItemProviderBCH
+        );
 
-      const variableCompletionProvider = monaco.languages.registerCompletionItemProvider(
-        bitauthTemplatingLanguage,
-        {
-          provideCompletionItems: (model, position) => {
-            if (!isCorrectScript(model, script)) {
-              return;
-            }
-            const contentBeforePosition = model.getValueInRange({
-              startColumn: 1,
-              startLineNumber: position.lineNumber,
-              endColumn: position.column,
-              endLineNumber: position.lineNumber,
-            });
-            const lastValidIdentifier = /[a-zA-Z_][.a-zA-Z0-9_-]*$/;
-            const match = contentBeforePosition.match(lastValidIdentifier);
-            /**
-             * If match is `null`, the user manually triggered autocomplete:
-             * show all potential variable options.
-             */
-            const assumedMatch = match === null ? [''] : match;
-            const parts = assumedMatch[0].split('.');
-            const targetId = parts[0];
-            const operation = parts[1] as string | undefined;
-            const parameter = parts[2] as string | undefined;
+      const variableCompletionProvider =
+        monaco.languages.registerCompletionItemProvider(
+          bitauthTemplatingLanguage,
+          {
+            provideCompletionItems: (model, position) => {
+              if (!isCorrectScript(model, script)) {
+                return;
+              }
+              const contentBeforePosition = model.getValueInRange({
+                startColumn: 1,
+                startLineNumber: position.lineNumber,
+                endColumn: position.column,
+                endLineNumber: position.lineNumber,
+              });
+              const lastValidIdentifier = /[a-zA-Z_][.a-zA-Z0-9_-]*$/;
+              const match = contentBeforePosition.match(lastValidIdentifier);
+              /**
+               * If match is `null`, the user manually triggered autocomplete:
+               * show all potential variable options.
+               */
+              const assumedMatch = match === null ? [''] : match;
+              const parts = assumedMatch[0].split('.');
+              const targetId = parts[0];
+              const operation = parts[1] as string | undefined;
+              const parameter = parts[2] as string | undefined;
 
-            const word = model.getWordUntilPosition(position);
-            const range: Range = {
-              startLineNumber: position.lineNumber,
-              endLineNumber: position.lineNumber,
-              startColumn: word.startColumn,
-              endColumn: word.endColumn,
-            };
+              const word = model.getWordUntilPosition(position);
+              const range: Range = {
+                startLineNumber: position.lineNumber,
+                endLineNumber: position.lineNumber,
+                startColumn: word.startColumn,
+                endColumn: word.endColumn,
+              };
 
-            if (operation === undefined) {
-              return {
-                suggestions: [
-                  ...Object.entries(props.variableDetails)
-                    .filter(([id]) => id.indexOf(targetId) !== -1)
-                    .map<monacoEditor.languages.CompletionItem>(
-                      ([id, { variable, entity }]) => {
-                        const triggerNextSuggestion =
-                          variable.type === 'Key' || variable.type === 'HdKey';
-                        return {
+              if (operation === undefined) {
+                return {
+                  suggestions: [
+                    ...Object.entries(props.variableDetails)
+                      .filter(([id]) => id.indexOf(targetId) !== -1)
+                      .map<monacoEditor.languages.CompletionItem>(
+                        ([id, { variable, entity }]) => {
+                          const triggerNextSuggestion =
+                            variable.type === 'Key' ||
+                            variable.type === 'HdKey';
+                          return {
+                            label: id,
+                            detail: `${variable.name} – ${variable.type} (${entity.name})`,
+                            documentation: variable.description,
+                            kind: monaco.languages.CompletionItemKind.Variable,
+                            insertText: triggerNextSuggestion ? `${id}.` : id,
+                            range,
+                            ...(triggerNextSuggestion
+                              ? {
+                                  command: {
+                                    id: 'editor.action.triggerSuggest',
+                                    title: 'Suggest Operation',
+                                  },
+                                }
+                              : {}),
+                          };
+                        }
+                      ),
+                    ...Object.entries(props.scriptDetails)
+                      .filter(([id]) => id.indexOf(targetId) !== -1)
+                      .map<monacoEditor.languages.CompletionItem>(
+                        ([id, script]) => ({
                           label: id,
-                          detail: `${variable.name} – ${variable.type} (${entity.name})`,
-                          documentation: variable.description,
-                          kind: monaco.languages.CompletionItemKind.Variable,
-                          insertText: triggerNextSuggestion ? `${id}.` : id,
+                          detail: `${script.name} – Script`,
+                          kind: monaco.languages.CompletionItemKind.Function,
+                          insertText: id,
                           range,
-                          ...(triggerNextSuggestion
-                            ? {
-                                command: {
-                                  id: 'editor.action.triggerSuggest',
-                                  title: 'Suggest Operation',
-                                },
-                              }
-                            : {}),
-                        };
-                      }
-                    ),
-                  ...Object.entries(props.scriptDetails)
-                    .filter(([id]) => id.indexOf(targetId) !== -1)
-                    .map<monacoEditor.languages.CompletionItem>(
-                      ([id, script]) => ({
-                        label: id,
-                        detail: `${script.name} – Script`,
-                        kind: monaco.languages.CompletionItemKind.Function,
-                        insertText: id,
-                        range,
-                      })
-                    ),
-                  ...Object.entries(builtInVariableDetails)
-                    .filter(([id]) => id.indexOf(targetId) !== -1)
-                    .map<monacoEditor.languages.CompletionItem>(
-                      ([id, [name, description]]) => {
-                        const triggerNextSuggestion =
-                          id === BuiltInVariables.signingSerialization;
-                        return {
-                          label: id,
+                        })
+                      ),
+                    ...Object.entries(builtInVariableDetails)
+                      .filter(([id]) => id.indexOf(targetId) !== -1)
+                      .map<monacoEditor.languages.CompletionItem>(
+                        ([id, [name, description]]) => {
+                          const triggerNextSuggestion =
+                            id === BuiltInVariables.signingSerialization;
+                          return {
+                            label: id,
+                            detail: name,
+                            documentation: description,
+                            kind: monaco.languages.CompletionItemKind.Variable,
+                            insertText: triggerNextSuggestion ? `${id}.` : id,
+                            range,
+                            ...(triggerNextSuggestion
+                              ? {
+                                  command: {
+                                    id: 'editor.action.triggerSuggest',
+                                    title: 'Suggest Operation',
+                                  },
+                                }
+                              : {}),
+                          };
+                        }
+                      ),
+                  ],
+                };
+              }
+
+              const details = props.variableDetails[targetId] as
+                | VariableDetails[string]
+                | undefined;
+
+              if (
+                details === undefined ||
+                (details.variable.type !== 'HdKey' &&
+                  details.variable.type !== 'Key')
+              ) {
+                if (targetId === BuiltInVariables.signingSerialization) {
+                  return {
+                    suggestions: Object.entries(
+                      signingSerializationOperationDetails
+                    )
+                      .filter(([op]) => op.indexOf(operation) !== -1)
+                      .map<monacoEditor.languages.CompletionItem>(
+                        ([op, [name, description]]) => ({
+                          label: op,
                           detail: name,
                           documentation: description,
-                          kind: monaco.languages.CompletionItemKind.Variable,
-                          insertText: triggerNextSuggestion ? `${id}.` : id,
+                          kind: monaco.languages.CompletionItemKind.Function,
+                          insertText: op,
                           range,
-                          ...(triggerNextSuggestion
+                        })
+                      ),
+                  };
+                }
+                return;
+              }
+
+              if (parameter === undefined) {
+                const descriptions = getKeyOperationDescriptions();
+                return {
+                  suggestions: Object.entries(descriptions)
+                    .filter(([op]) => op.indexOf(operation) !== -1)
+                    .map<monacoEditor.languages.CompletionItem>(
+                      ([op, descriptions]) => {
+                        const requiresParameter =
+                          keyOperationsWhichRequireAParameter.indexOf(op) !==
+                          -1;
+                        return {
+                          label: op,
+                          detail: descriptions[0],
+                          documentation: descriptions[1],
+                          kind: monaco.languages.CompletionItemKind.Function,
+                          insertText: requiresParameter ? `${op}.` : op,
+                          range,
+                          ...(requiresParameter
                             ? {
                                 command: {
                                   id: 'editor.action.triggerSuggest',
-                                  title: 'Suggest Operation',
+                                  title: 'Suggest Parameter',
                                 },
                               }
                             : {}),
                         };
                       }
                     ),
-                ],
-              };
-            }
+                };
+              }
 
-            const details = props.variableDetails[targetId] as
-              | VariableDetails[string]
-              | undefined;
+              if (
+                keyOperationsWhichRequireAParameter.indexOf(operation) === -1
+              ) {
+                return;
+              }
 
-            if (
-              details === undefined ||
-              (details.variable.type !== 'HdKey' &&
-                details.variable.type !== 'Key')
-            ) {
-              if (targetId === BuiltInVariables.signingSerialization) {
+              if (
+                operation === 'signature' ||
+                operation === 'schnorr_signature'
+              ) {
                 return {
                   suggestions: Object.entries(
-                    signingSerializationOperationDetails
+                    signatureOperationParameterDescriptions
                   )
-                    .filter(([op]) => op.indexOf(operation) !== -1)
+                    .filter(([param]) => param.indexOf(parameter) !== -1)
                     .map<monacoEditor.languages.CompletionItem>(
-                      ([op, [name, description]]) => ({
-                        label: op,
-                        detail: name,
-                        documentation: description,
+                      ([param, descriptions]) => ({
+                        label: param,
+                        detail: descriptions[0],
+                        documentation: descriptions[1],
                         kind: monaco.languages.CompletionItemKind.Function,
-                        insertText: op,
+                        insertText: param,
                         range,
                       })
                     ),
                 };
-              }
-              return;
-            }
-
-            if (parameter === undefined) {
-              const descriptions = getKeyOperationDescriptions();
-              return {
-                suggestions: Object.entries(descriptions)
-                  .filter(([op]) => op.indexOf(operation) !== -1)
-                  .map<monacoEditor.languages.CompletionItem>(
-                    ([op, descriptions]) => {
-                      const requiresParameter =
-                        keyOperationsWhichRequireAParameter.indexOf(op) !== -1;
-                      return {
-                        label: op,
-                        detail: descriptions[0],
-                        documentation: descriptions[1],
-                        kind: monaco.languages.CompletionItemKind.Function,
-                        insertText: requiresParameter ? `${op}.` : op,
+              } else if (
+                operation === 'data_signature' ||
+                operation === 'schnorr_data_signature'
+              ) {
+                return {
+                  suggestions: Object.entries(props.scriptDetails)
+                    .filter(([id]) => id.indexOf(parameter) !== -1)
+                    .map<monacoEditor.languages.CompletionItem>(
+                      ([id, scriptInfo]) => ({
+                        label: id,
+                        detail: scriptInfo.name,
+                        kind: monaco.languages.CompletionItemKind.Variable,
+                        insertText: id,
                         range,
-                        ...(requiresParameter
-                          ? {
-                              command: {
-                                id: 'editor.action.triggerSuggest',
-                                title: 'Suggest Parameter',
-                              },
-                            }
-                          : {}),
-                      };
-                    }
-                  ),
-              };
-            }
-
-            if (keyOperationsWhichRequireAParameter.indexOf(operation) === -1) {
-              return;
-            }
-
-            if (
-              operation === 'signature' ||
-              operation === 'schnorr_signature'
-            ) {
-              return {
-                suggestions: Object.entries(
-                  signatureOperationParameterDescriptions
-                )
-                  .filter(([param]) => param.indexOf(parameter) !== -1)
-                  .map<monacoEditor.languages.CompletionItem>(
-                    ([param, descriptions]) => ({
-                      label: param,
-                      detail: descriptions[0],
-                      documentation: descriptions[1],
-                      kind: monaco.languages.CompletionItemKind.Function,
-                      insertText: param,
-                      range,
-                    })
-                  ),
-              };
-            } else if (
-              operation === 'data_signature' ||
-              operation === 'schnorr_data_signature'
-            ) {
-              return {
-                suggestions: Object.entries(props.scriptDetails)
-                  .filter(([id]) => id.indexOf(parameter) !== -1)
-                  .map<monacoEditor.languages.CompletionItem>(
-                    ([id, scriptInfo]) => ({
-                      label: id,
-                      detail: scriptInfo.name,
-                      kind: monaco.languages.CompletionItemKind.Variable,
-                      insertText: id,
-                      range,
-                    })
-                  ),
-              };
-            } else {
-              console.error(`Unexpected key operation: ${operation}.`);
-              return;
-            }
-          },
-          triggerCharacters: ['.'],
-        }
-      );
+                      })
+                    ),
+                };
+              } else {
+                console.error(`Unexpected key operation: ${operation}.`);
+                return;
+              }
+            },
+            triggerCharacters: ['.'],
+          }
+        );
 
       const update = updateMarkers({
         compilation,

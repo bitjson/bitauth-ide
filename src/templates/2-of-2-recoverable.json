@@ -4,7 +4,7 @@
   "description": "A 2-of-2 wallet, which after a specified delay, can be recovered by either of the original two keys and a signature from a trusted user (e.g. an attorney).\n\nIn this implementation, all wallet addresses become recoverable at the same time. To \"bump\" the recovery time to a later date, create a new wallet and transfer the funds.\n\nThis scheme is described in more detail in BIP-65.",
   "entities": {
     "signer_1": {
-      "description": "One of the two co-owners of this wallet. If Signer 1 is unable to sign, Signer 2 and Trusted Party can recover funds after 30 days.",
+      "description": "One of the two co-owners of this wallet. If Signer 1 is unable to sign, Signer 2 and Trusted Party can recover funds after the specified delay.",
       "name": "Signer 1",
       "scripts": ["lock", "spend", "recover_1"],
       "variables": {
@@ -66,7 +66,7 @@
   },
   "scripts": {
     "lock": {
-      "lockingType": "p2sh",
+      "lockingType": "p2sh20",
       "name": "2-of-2 Recoverable Vault",
       "script": "OP_IF\n  <$(\n    <current_block_time> <delay_seconds>\n    OP_ADD\n  )>\n  OP_CHECKLOCKTIMEVERIFY OP_DROP\n  <trusted.public_key>\n  OP_CHECKSIGVERIFY\n  <1>\nOP_ELSE\n  <2>\nOP_ENDIF\n<first.public_key> <second.public_key> <2>\nOP_CHECKMULTISIG"
     },
@@ -96,6 +96,6 @@
       "unlocks": "lock"
     }
   },
-  "supported": ["BCH_2020_05", "BCH_2020_11_SPEC"],
+  "supported": ["BCH_2021_05", "BCH_2022_05"],
   "version": 0
 }

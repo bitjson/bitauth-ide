@@ -15,7 +15,7 @@
     margin: 12px 12px 24px 0;
   }
   .import-input {
-    .bp3-file-upload-input::after {
+    .bp4-file-upload-input::after {
       background: var(--interface-background-color);
     }
   }
@@ -56,14 +56,14 @@
 
 .sharing-link-popover {
   $tooltip-background: var(--stack-vis-background-color);
-  .bp3-popover-content {
+  .bp4-popover-content {
     max-width: 400px !important;
     overflow-wrap: break-word;
     background: $tooltip-background !important;
     color: #fff !important;
     padding: 12px;
   }
-  .bp3-popover-arrow-fill {
+  .bp4-popover-arrow-fill {
     fill: $tooltip-background !important;
   }
 }

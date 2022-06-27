@@ -221,7 +221,7 @@ export const EditScriptDialog = ({
                   internalId,
                   name: scriptName,
                   id: scriptId,
-                  isP2SH: scriptIsP2SH,
+                  lockingType: scriptIsP2SH ? 'p2sh20' : 'standard',
                   isPushed: scriptIsPushed,
                 });
                 closeDialog();

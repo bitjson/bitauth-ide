@@ -1,6 +1,6 @@
 import '../editor-dialog.scss';
 import './ImportExportDialog.scss';
-import React, { useState } from 'react';
+import React, { SetStateAction, useState } from 'react';
 import { ActionCreators } from '../../../state/reducer';
 import {
   Classes,
@@ -30,7 +30,7 @@ import {
 } from '@bitauth/libauth';
 import {
   exportAuthenticationTemplate,
-  importAuthenticationTemplate,
+  ideImportAuthenticationTemplate,
 } from '../../../state/import-export';
 import { emptyTemplate } from '../../../state/defaults';
 import {
@@ -88,7 +88,7 @@ export const ImportExportDialog = connect(
         const date = new Date(key.replace(localStorageBackupPrefix, ''));
         try {
           const template = JSON.parse(value);
-          const attemptedParse = importAuthenticationTemplate(template);
+          const attemptedParse = ideImportAuthenticationTemplate(template);
           if (typeof attemptedParse === 'string') {
             throw attemptedParse;
           }
@@ -149,7 +149,7 @@ export const ImportExportDialog = connect(
   >(undefined);
   return (
     <Dialog
-      className="bp3-dark editor-dialog ImportExportDialog"
+      className="bp4-dark editor-dialog ImportExportDialog"
       onOpening={() => {
         setErrorMessage('');
         updateFileName('');
@@ -238,7 +238,7 @@ export const ImportExportDialog = connect(
                   try {
                     updateTemplate(reader.result.toString());
                   } catch (e) {
-                    setErrorMessage(e);
+                    setErrorMessage(e as SetStateAction<string>);
                   }
                 };
                 reader.readAsText(file);
@@ -320,14 +320,14 @@ export const ImportExportDialog = connect(
               errorCount !== 0 ||
               errorMessage !== '' ||
               template === props.authenticationTemplate
-                ? 'bp3-disabled'
+                ? 'bp4-disabled'
                 : ''
             }
             onClick={() => {
               let parsed;
               try {
                 parsed = JSON.parse(template);
-                const result = importAuthenticationTemplate(parsed);
+                const result = ideImportAuthenticationTemplate(parsed);
                 if (typeof result === 'string') {
                   throw new Error(result);
                 }
@@ -369,7 +369,7 @@ export const ImportExportDialog = connect(
         </p>
         <HTMLSelect
           id="backups"
-          className="bp3-fill"
+          className="bp4-fill"
           options={props.restoreOptions}
           value={selectedBackup}
           onChange={(e) => {

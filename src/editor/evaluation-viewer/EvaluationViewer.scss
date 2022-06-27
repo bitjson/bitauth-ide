@@ -49,11 +49,11 @@ $hex-color: #5bb498;
         }
       }
 
-      .assistance-popover-target .bp3-popover-target {
+      .assistance-popover-target .bp4-popover-target {
         display: inline;
       }
 
-      .bp3-popover-target .error-message {
+      .bp4-popover-target .error-message {
         background-color: var(--editor-background-color);
         border-radius: 3px;
       }
@@ -124,7 +124,7 @@ $hex-color: #5bb498;
           outline: none;
         }
       }
-      .bp3-icon {
+      .bp4-icon {
         top: 9px;
       }
     }
@@ -155,15 +155,15 @@ $hex-color: #5bb498;
       height: 12px;
     }
 
-    .bp3-icon:focus,
-    .bp3-icon:hover,
-    .bp3-button:focus,
-    .bp3-button:hover {
+    .bp4-icon:focus,
+    .bp4-icon:hover,
+    .bp4-button:focus,
+    .bp4-button:hover {
       outline: none;
       color: #fff;
     }
 
-    .bp3-button {
+    .bp4-button {
       background: none;
       border: none;
       box-shadow: none;
@@ -173,7 +173,7 @@ $hex-color: #5bb498;
       font-size: 12px;
       color: var(--toolbar-icon-color);
 
-      .bp3-icon {
+      .bp4-icon {
         color: inherit;
       }
 
@@ -299,22 +299,22 @@ $hex-color: #5bb498;
 .control-popover,
 .help-popover {
   $tooltip-background: var(--interface-background-color);
-  .bp3-popover-content {
+  .bp4-popover-content {
     background: $tooltip-background !important;
   }
-  .bp3-popover-arrow-fill {
+  .bp4-popover-arrow-fill {
     fill: $tooltip-background !important;
   }
 }
 
 .control-popover {
-  .bp3-popover-content {
+  .bp4-popover-content {
     max-width: 500px !important;
   }
 }
 
 .help-popover {
-  .bp3-popover-content {
+  .bp4-popover-content {
     color: #fff !important;
     padding: 4px 12px;
     max-width: 600px !important;
@@ -375,7 +375,11 @@ $hex-color: #5bb498;
   }
 }
 
-.generated-scenario-log {
+.scenario-logging-options {
+  margin: 1em 0;
+}
+
+.scenario-logging-options > button {
   appearance: none;
   -webkit-appearance: none;
   border: 0;
@@ -384,7 +388,6 @@ $hex-color: #5bb498;
   color: inherit;
   opacity: 0.9;
   display: inline-block;
-  margin: 1em 0;
   padding: 0;
   text-decoration: underline;
   cursor: pointer;
@@ -398,14 +401,14 @@ $hex-color: #5bb498;
 
 .control-tooltip,
 .control-popover {
-  .bp3-popover-content {
+  .bp4-popover-content {
     color: #fff !important;
     padding: 4px 12px;
   }
 }
 
 .stack-popover {
-  .bp3-popover-content {
+  .bp4-popover-content {
     max-width: 400px !important;
     overflow-wrap: break-word;
     font-family: var(--monospace-font-family);

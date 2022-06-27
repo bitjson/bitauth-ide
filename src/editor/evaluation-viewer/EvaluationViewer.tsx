@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import './EvaluationViewer.scss';
 import {
   binToHex,
-  parseBytesAsScriptNumber,
   binToBinString,
   Range,
   stringify,
+  vmNumberToBigInt,
+  stringifyDebugTraceSummary,
+  summarizeDebugTrace,
 } from '@bitauth/libauth';
 import * as libauth from '@bitauth/libauth';
 import {
@@ -31,11 +33,11 @@ import { abbreviateStackItem } from '../common';
 
 (window as any).libauth = libauth;
 
-// cspell:ignore cbitcoin cwindow
+// cspell:ignore clibauth cwindow
 console.log(
   `%cWelcome to Bitauth IDE!
   
-%cThe %cbitcoin-ts%c library is available at%c libauth%c (%cwindow.libauth%c).
+%cThe %clibauth%c library is available at%c libauth%c (%cwindow.libauth%c).
 You can click a line in the evaluation viewer to inspect the program state at that point in the evaluation.
 
 %cTip: to quickly stringify an object which %cJSON.stringify%c doesn't support, try%c libauth.stringify%c.`,
@@ -84,7 +86,7 @@ const getStackItemDisplaySettings = (
       label: name,
     };
   }
-  const number = parseBytesAsScriptNumber(item);
+  const number = vmNumberToBigInt(item);
   if (typeof number === 'bigint') {
     if (settings.scriptNumbersDisplayFormat === 'integer') {
       return {
@@ -399,12 +401,14 @@ const ScenarioSwitcher = ({
 
 export const ViewerControls = ({
   changeEvaluationViewerSettings,
+  debugTrace,
   evaluationViewerSettings,
   importExport,
   scenarioDetails,
   switchScenario,
 }: {
   changeEvaluationViewerSettings: typeof ActionCreators.changeEvaluationViewerSettings;
+  debugTrace: IDESupportedProgramState[] | undefined;
   evaluationViewerSettings: EvaluationViewerSettings;
   importExport: typeof ActionCreators.importExport;
   scenarioDetails: ScenarioDetails;
@@ -489,28 +493,41 @@ export const ViewerControls = ({
                         : 'passed.'
                     }`}
               </p>
-              <details>
-                <summary>Scenario</summary>
+              <p className="scenario-logging-options">
                 <button
-                  className="generated-scenario-log"
-                  onClick={() =>
+                  onClick={() => {
                     console.log(
                       'Generated Scenario:',
                       scenarioDetails.generatedScenario
-                    )
-                  }
+                    );
+                  }}
                 >
                   Log Scenario to Developer Console
                 </button>
-                <code className="generated-scenario">
-                  <pre>{stringify(scenarioDetails.generatedScenario)}</pre>
-                </code>
-              </details>
+                <button
+                  onClick={() => {
+                    if (debugTrace !== undefined) {
+                      console.log(
+                        'Trace Summary:',
+                        stringifyDebugTraceSummary(
+                          summarizeDebugTrace(debugTrace)
+                        )
+                      );
+                    }
+                    console.log('Debug Trace:', debugTrace);
+                  }}
+                >
+                  Log Debug Trace to Developer Console
+                </button>
+              </p>
+              <code className="generated-scenario">
+                <pre>{stringify(scenarioDetails.generatedScenario)}</pre>
+              </code>
             </div>
           }
           portalClassName="control-popover"
           interactionKind="hover"
-          position="bottom-right"
+          placement="auto"
         >
           {scenarioDetails.selectedScenario === undefined ||
           (scenarioDetails.selectedScenario?.verifyResult === true &&
@@ -746,6 +763,7 @@ export const ViewerControls = ({
 
 export const EvaluationViewer = (props: {
   changeEvaluationViewerSettings: typeof ActionCreators.changeEvaluationViewerSettings;
+  debugTrace: IDESupportedProgramState[] | undefined;
   importExport: typeof ActionCreators.importExport;
   switchScenario: typeof ActionCreators.switchScenario;
   cursorLine: number | undefined;
@@ -755,12 +773,8 @@ export const EvaluationViewer = (props: {
   showControls: boolean;
   scenarioDetails: ScenarioDetails;
 }) => {
-  const {
-    evaluationSource,
-    evaluationTrace,
-    frame,
-    lookup,
-  } = props.computedState;
+  const { evaluationSource, evaluationTrace, frame, lookup } =
+    props.computedState;
   const { compilation, evaluationLines } = frame;
   const [cachedEvaluation, setCachedEvaluation] = useState(emptyEvaluation);
   const [cachedEvaluationSource, setCachedEvaluationSource] = useState('');
@@ -808,6 +822,7 @@ export const EvaluationViewer = (props: {
                     changeEvaluationViewerSettings={
                       props.changeEvaluationViewerSettings
                     }
+                    debugTrace={props.debugTrace}
                     evaluationViewerSettings={props.evaluationViewerSettings}
                     importExport={props.importExport}
                     scenarioDetails={props.scenarioDetails}

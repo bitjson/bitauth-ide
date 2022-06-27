@@ -9,27 +9,16 @@ import {
   ScriptDetails,
 } from '../state/types';
 import {
-  OpcodesBCH,
   createCompiler,
-  AuthenticationProgramStateBCH,
-  compilerOperationsBCH,
-  TransactionContextCommon,
-  AnyCompilationEnvironment,
-  generateBytecodeMap,
-  authenticationTemplateToCompilationEnvironmentVirtualizedTests,
-  CompilerDefaults,
-  createTransactionContextCommon,
-  Input,
-  CompilationData,
-  createAuthenticationProgramEvaluationCommon,
   extractEvaluationSamplesRecursive,
   CompilationResultSuccess,
   EvaluationSample,
-  Scenario,
   extractBytecodeResolutions,
-  flattenBinArray,
   encodeDataPush,
   ScriptReductionTraceScriptNode,
+  authenticationTemplateToCompilerConfiguration,
+  createVirtualMachineBCH2022,
+  createVirtualMachineBCHCHIPs,
 } from '@bitauth/libauth';
 import {
   StackItemIdentifyFunction,
@@ -42,26 +31,6 @@ import {
 } from './editor-types';
 import { exportAuthenticationTemplate } from '../state/import-export';
 import { samplesToEvaluationLines } from '../btl-utils/editor-tooling';
-import {
-  OpcodesBCHTxInt,
-  AuthenticationProgramStateBCHTxInt,
-} from '../init/txint-vm';
-
-const getVirtualizedUnlockingScriptId = (
-  testSetupInternalId: string,
-  testedScript: IDETemplateTestedScript
-) => {
-  const index = testedScript.childInternalIds.indexOf(testSetupInternalId);
-  return `${CompilerDefaults.virtualizedTestUnlockingScriptPrefix}${testedScript.id}_${index}`;
-};
-
-const getVirtualizedCheckScriptId = (
-  testSetupInternalId: string,
-  testedScript: IDETemplateTestedScript
-) => {
-  const index = testedScript.childInternalIds.indexOf(testSetupInternalId);
-  return `${CompilerDefaults.virtualizedTestCheckScriptPrefix}${testedScript.id}_${index}`;
-};
 
 /**
  * This method lets us pretend that the provided script was wrapped in a push
@@ -106,15 +75,10 @@ export const computeEditorState = <
 ): ComputedEditorState<ProgramState> => {
   const {
     ideMode,
-    crypto,
-    authenticationVirtualMachines,
     currentEditingMode,
     currentlyEditingInternalId,
     currentScenarioInternalId,
   } = state;
-  if (crypto === null || authenticationVirtualMachines === null) {
-    return { editorMode: ProjectEditorMode.loading };
-  }
   if (ideMode === IDEMode.wallet) {
     return { editorMode: ProjectEditorMode.wallet };
   }
@@ -133,11 +97,13 @@ export const computeEditorState = <
   if (currentlyEditingInternalId === undefined) {
     return { editorMode: ProjectEditorMode.templateSettingsEditor };
   }
-  const vm = authenticationVirtualMachines[state.currentVmId];
   const template = exportAuthenticationTemplate(state.currentTemplate);
-  const environment = authenticationTemplateToCompilationEnvironmentVirtualizedTests(
-    template
-  );
+  const configuration = authenticationTemplateToCompilerConfiguration(template);
+  const vm =
+    state.currentVmId === 'BCH_2022_05'
+      ? createVirtualMachineBCH2022()
+      : createVirtualMachineBCHCHIPs();
+  const compiler = createCompiler(configuration);
 
   /**
    * Map variable InternalIds to entity InternalIds
@@ -228,46 +194,19 @@ export const computeEditorState = <
             internalId: scenario.internalId,
           }));
 
-  const vmOpcodes =
-    state.currentVmId === 'BCH_2022_05_SPEC' ? OpcodesBCHTxInt : OpcodesBCH;
-
-  const compiler = createCompiler<
-    TransactionContextCommon,
-    AnyCompilationEnvironment<TransactionContextCommon>,
-    OpcodesBCH,
-    AuthenticationProgramStateBCH
-  >({
-    ...environment,
-    opcodes: generateBytecodeMap(vmOpcodes),
-    operations: compilerOperationsBCH,
-    ripemd160: crypto.ripemd160,
-    secp256k1: crypto.secp256k1,
-    sha256: crypto.sha256,
-    sha512: crypto.sha512,
-    vm,
-    createAuthenticationProgram: createAuthenticationProgramEvaluationCommon,
-  });
-
   const {
     editorMode,
     isPushed,
-    /** `true` if current script is an unlocking script which unlocks a P2SH
-     * locking script. */
-    isP2sh,
     /**
-     * All `IDEActivatableScript`s have a virtualized "locking script":
-     * - unlocking scripts have a real locking script
-     * - isolated scripts are treated as a locking script themselves (with an
-     * empty unlocking script)
-     * - tested scripts are concatenated with their check scripts to create a
-     * virtualized "locking script" which should complete in a valid state (a
-     * single `1` on the stack, etc.)
+     * Either `standard` or the locking type of the locking script unlocked by
+     * the current script.
      */
-    lockingScriptId,
+    lockingType,
     /**
      * The internal ID of the script being evaluated (in evaluation order)
      */
     scriptEditorEvaluationTrace,
+    lockingScriptId,
     /**
      * The ID of the active "unlocking script". For unlocking/locking script
      * pairs, the unlocking script's ID. For tested scripts, the ID of the
@@ -279,47 +218,48 @@ export const computeEditorState = <
       ? {
           editorMode: ProjectEditorMode.isolatedScriptEditor,
           isPushed: false,
-          isP2sh: false,
-          lockingScriptId: currentScript.id,
+          lockingType: 'standard' as const,
           scriptEditorEvaluationTrace: [currentScript.internalId],
+          lockingScriptId: currentScript.id,
           unlockingScriptId: undefined,
         }
       : currentScript.type === 'unlocking'
       ? {
           editorMode: ProjectEditorMode.scriptPairEditor,
           isPushed: false,
-          isP2sh: (state.currentTemplate.scriptsByInternalId[
-            currentScript.parentInternalId
-          ] as IDETemplateLockingScript).isP2SH,
-          lockingScriptId: (state.currentTemplate.scriptsByInternalId[
-            currentScript.parentInternalId
-          ] as IDETemplateLockingScript).id,
+          lockingType: (
+            state.currentTemplate.scriptsByInternalId[
+              currentScript.parentInternalId
+            ] as IDETemplateLockingScript
+          ).lockingType,
           scriptEditorEvaluationTrace: [
             currentScript.internalId,
             currentScript.parentInternalId,
           ],
+          lockingScriptId: undefined,
           unlockingScriptId: currentScript.id,
         }
       : {
           editorMode: ProjectEditorMode.testedScriptEditor,
-          isPushed: (state.currentTemplate.scriptsByInternalId[
-            currentScript.parentInternalId
-          ] as IDETemplateTestedScript).pushed,
-          isP2sh: false,
-          lockingScriptId: (state.currentTemplate.scriptsByInternalId[
-            currentScript.parentInternalId
-          ] as IDETemplateTestedScript).id,
+          isPushed: (
+            state.currentTemplate.scriptsByInternalId[
+              currentScript.parentInternalId
+            ] as IDETemplateTestedScript
+          ).pushed,
+          lockingType: 'standard' as const,
           scriptEditorEvaluationTrace: [
             currentScript.internalId,
             currentScript.parentInternalId,
             currentScript.testCheckInternalId,
           ],
-          unlockingScriptId: getVirtualizedUnlockingScriptId(
-            currentScript.internalId,
-            state.currentTemplate.scriptsByInternalId[
-              currentScript.parentInternalId
-            ] as IDETemplateTestedScript
-          ),
+          lockingScriptId: undefined,
+          unlockingScriptId: `${
+            (
+              state.currentTemplate.scriptsByInternalId[
+                currentScript.parentInternalId
+              ] as IDETemplateTestedScript
+            ).id
+          }.${currentScript.id}.unlock`,
         };
 
   /**
@@ -329,127 +269,32 @@ export const computeEditorState = <
     (internalId) => state.currentTemplate.scriptsByInternalId[internalId].script
   );
 
-  const scenario = compiler.generateScenario({ unlockingScriptId, scenarioId });
+  const scenarioGeneration = compiler.generateScenario({
+    debug: true,
+    lockingScriptId,
+    unlockingScriptId,
+    scenarioId,
+  });
 
-  const lockingScriptCompilation =
-    typeof scenario === 'string'
-      ? undefined
-      : compiler.generateBytecode(lockingScriptId, scenario.data, true);
-
-  const checkScriptCompilation =
-    currentScript.type === 'test-setup' && typeof scenario !== 'string'
-      ? compiler.generateBytecode(
-          getVirtualizedCheckScriptId(
-            currentScript.internalId,
-            state.currentTemplate.scriptsByInternalId[
-              currentScript.parentInternalId
-            ] as IDETemplateTestedScript
-          ),
-          scenario.data,
-          true
-        )
-      : undefined;
-
-  const dataWithTransactionContext: CompilationData | undefined =
-    typeof scenario === 'string'
-      ? undefined
+  const { lockingScriptCompilation, unlockingScriptCompilation } =
+    typeof scenarioGeneration !== 'string'
+      ? {
+          lockingScriptCompilation: scenarioGeneration.lockingCompilation,
+          unlockingScriptCompilation: scenarioGeneration.unlockingCompilation,
+        }
       : {
-          ...scenario.data,
-          transactionContext: createTransactionContextCommon(scenario.program),
+          lockingScriptCompilation: undefined,
+          unlockingScriptCompilation: undefined,
         };
 
-  const unlockingScriptCompilation =
-    unlockingScriptId === undefined || dataWithTransactionContext === undefined
-      ? undefined
-      : compiler.generateBytecode(
-          unlockingScriptId,
-          dataWithTransactionContext,
-          true
-        );
-
-  /**
-   * Evaluations are only attempted if each expected compilation was successful.
-   */
-  const tryEvaluation =
-    lockingScriptCompilation !== undefined &&
-    lockingScriptCompilation.success &&
-    (checkScriptCompilation === undefined || checkScriptCompilation.success) &&
-    (unlockingScriptCompilation === undefined ||
-      unlockingScriptCompilation.success);
-
-  /**
-   * For isolated scripts, the "virtualized" locking bytecode is just the
-   * isolated script. For standard unlocking/locking script pairs, the real
-   * locking script is used. For tested scripts, the locking and check scripts
-   * are concatenated as if they were both part of the same locking script;
-   * also, if the tested script is marked as `pushed`, its result is wrapped in
-   * a push operation for testing.
-   */
-  const virtualizedLockingBytecode =
-    lockingScriptCompilation !== undefined && lockingScriptCompilation.success
-      ? checkScriptCompilation !== undefined && checkScriptCompilation.success
-        ? flattenBinArray([
-            isPushed
-              ? encodeDataPush(lockingScriptCompilation.bytecode)
-              : lockingScriptCompilation.bytecode,
-            checkScriptCompilation.bytecode,
-          ])
-        : lockingScriptCompilation.bytecode
-      : /**
-         * This should never be used, as a failure in locking script compilation
-         * would cause the same failure during `coveredBytecode` generation in
-         * unlocking script compilation.
-         */
-        Uint8Array.of();
-
-  const virtualizedUnlockingBytecode =
-    unlockingScriptCompilation === undefined
-      ? Uint8Array.of()
-      : (unlockingScriptCompilation as CompilationResultSuccess<ProgramState>)
-          .bytecode;
-
-  const debugTrace = tryEvaluation
-    ? vm.debug({
-        inputIndex: (scenario as Scenario).program.inputIndex,
-        sourceOutput: {
-          lockingBytecode: virtualizedLockingBytecode,
-          satoshis: (scenario as Scenario).program.sourceOutput.satoshis,
-        },
-        spendingTransaction: {
-          /**
-           * Valid scenarios contain only one `input` with an undefined
-           * `unlockingBytecode`. Here we replace that value with our virtualized
-           * unlocking bytecode.
-           */
-          inputs: (scenario as Scenario).program.spendingTransaction.inputs.map<Input>(
-            (input) => ({
-              outpointIndex: input.outpointIndex,
-              outpointTransactionHash: input.outpointTransactionHash,
-              sequenceNumber: input.sequenceNumber,
-              unlockingBytecode:
-                input.unlockingBytecode === undefined
-                  ? virtualizedUnlockingBytecode
-                  : input.unlockingBytecode,
-            })
-          ),
-          locktime: (scenario as Scenario).program.spendingTransaction.locktime,
-          outputs: (scenario as Scenario).program.spendingTransaction.outputs,
-          version: (scenario as Scenario).program.spendingTransaction.version,
-        },
-      })
-    : undefined;
-
-  const verifyResult: NonNullable<
-    ScenarioDetails['selectedScenario']
-  >['verifyResult'] =
-    debugTrace === undefined
-      ? undefined
-      : vm.verify(
-          (debugTrace[
-            debugTrace.length - 1
-          ] as unknown) as AuthenticationProgramStateBCHTxInt &
-            AuthenticationProgramStateBCH
-        );
+  const { debugTrace, verifyResult } =
+    typeof scenarioGeneration !== 'string' &&
+    typeof scenarioGeneration.scenario !== 'string'
+      ? {
+          debugTrace: vm.debug(scenarioGeneration.scenario.program),
+          verifyResult: vm.verify(scenarioGeneration.scenario.program),
+        }
+      : { debugTrace: undefined, verifyResult: undefined };
 
   const resolvedIdentifiers = [
     lockingScriptCompilation,
@@ -505,16 +350,17 @@ export const computeEditorState = <
       script.type === 'test-setup' || script.type === 'unlocking'
         ? { used: 'unlocking', compilation: unlockingScriptCompilation }
         : script.type === 'test-check'
-        ? { used: 'check', compilation: checkScriptCompilation }
+        ? { used: 'check', compilation: lockingScriptCompilation }
         : { used: 'locking', compilation: lockingScriptCompilation };
 
     let frameSamples: EvaluationSample<ProgramState>[] | undefined;
     let evaluationLines: EvaluationViewerLine<ProgramState>[] | undefined;
-    if (tryEvaluation) {
-      const successfulCompilation = compilation as CompilationResultSuccess<ProgramState>;
+    if (debugTrace !== undefined) {
+      const successfulCompilation =
+        compilation as CompilationResultSuccess<ProgramState>;
       const lastSourceLine = successfulCompilation.parse.end.line;
       const reduction = successfulCompilation.reduce;
-      if (isP2sh && used === 'locking') {
+      if (lockingType === 'p2sh20' && used === 'locking') {
         const p2shStates = 5;
         /**
          * Trim off P2SH states – we don't show that part in the IDE. (It's always
@@ -528,7 +374,7 @@ export const computeEditorState = <
         remainingStates = (remainingStates as ProgramState[]).slice(1);
       } else if (script.type === 'test-check' && !isPushed) {
         /**
-         * Since the actual locking script and and test-check script are
+         * Since the actual locking script and test-check script are
          * concatenated for evaluation, the "initial state" for the check script
          * is missing, shifting all remaining states back one sample. To avoid
          * this, we simulate the "initial state" by duplicating the first
@@ -566,6 +412,7 @@ export const computeEditorState = <
 
     return {
       compilation,
+      // TODO: indicate the offset of the script in compilation for check scripts?
       samples: frameSamples,
       script: script.script,
       scriptId: script.id,
@@ -595,7 +442,10 @@ export const computeEditorState = <
 
   const scenarioDetails: ScenarioDetails = {
     availableScenarios,
-    generatedScenario: scenario,
+    generatedScenario:
+      typeof scenarioGeneration === 'string'
+        ? scenarioGeneration
+        : scenarioGeneration.scenario,
     selectedScenario:
       templateScenario === undefined
         ? undefined
@@ -613,9 +463,10 @@ export const computeEditorState = <
   };
 
   return {
+    debugTrace,
     editorMode,
     isPushed,
-    isP2sh,
+    lockingType,
     identifyStackItems,
     scenarioDetails,
     scriptDetails,

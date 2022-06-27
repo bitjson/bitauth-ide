@@ -63,9 +63,9 @@ export const getCurrentScripts = (state: AppState) =>
     .sort((a, b) => a.name.localeCompare(b.name));
 
 export const getCurrentEntities = (state: AppState) =>
-  Object.entries(state.currentTemplate.entitiesByInternalId).reduce<
-    CurrentEntities
-  >(
+  Object.entries(
+    state.currentTemplate.entitiesByInternalId
+  ).reduce<CurrentEntities>(
     (prev, [internalId, entity]) => [
       ...prev,
       { internalId, name: entity.name, id: entity.id },
@@ -74,9 +74,9 @@ export const getCurrentEntities = (state: AppState) =>
   );
 
 export const getCurrentVariables = (state: AppState) =>
-  Object.entries(state.currentTemplate.variablesByInternalId).reduce<
-    CurrentVariables
-  >(
+  Object.entries(
+    state.currentTemplate.variablesByInternalId
+  ).reduce<CurrentVariables>(
     (prev, [internalId, variable]) => [
       ...prev,
       { internalId, name: variable.name, id: variable.id },
@@ -85,9 +85,9 @@ export const getCurrentVariables = (state: AppState) =>
   );
 
 export const getCurrentScenarios = (state: AppState) =>
-  Object.entries(state.currentTemplate.scenariosByInternalId).reduce<
-    CurrentScenarios
-  >(
+  Object.entries(
+    state.currentTemplate.scenariosByInternalId
+  ).reduce<CurrentScenarios>(
     (prev, [internalId, scenario]) => [
       ...prev,
       { internalId, name: scenario.name, id: scenario.id },

@@ -1,18 +1,18 @@
 .editor-dialog,
-.bp3-dialog,
-.bp3-dark.editor-dialog,
-.bp3-dark .editor-dialog {
+.bp4-dialog,
+.bp4-dark.editor-dialog,
+.bp4-dark .editor-dialog {
   font-family: var(--standard-font-family);
   color: #fffc;
   background: var(--editor-background-color);
 
-  .bp3-dialog-header {
+  .bp4-dialog-header {
     background: var(--interface-background-color);
-    .bp3-icon {
+    .bp4-icon {
       color: #fff6;
     }
   }
-  .bp3-heading {
+  .bp4-heading {
     color: #fff8;
     font-weight: normal;
     font-size: 14px;
@@ -26,21 +26,21 @@
   }
 
   select,
-  .bp3-input,
-  .bp3-button {
+  .bp4-input,
+  .bp4-button {
     background: var(--interface-background-color);
     color: #fffc;
     &:hover {
       background: #273136;
     }
-    &.bp3-disabled {
+    &.bp4-disabled {
       background: var(--interface-background-color);
       color: #fff3;
       &:hover {
         background: var(--interface-background-color);
       }
     }
-    &.bp3-intent-danger {
+    &.bp4-intent-danger {
       background-color: #db3737;
       &:hover {
         background-color: #c23030;
@@ -56,18 +56,18 @@
     border: 1px solid var(--interface-background-color);
   }
 
-  .bp3-label {
+  .bp4-label {
     width: 90px;
     flex-shrink: 0;
   }
 
-  .bp3-dialog-footer-actions {
+  .bp4-dialog-footer-actions {
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 
-  .bp3-button {
+  .bp4-button {
     flex-shrink: 0;
   }
 
@@ -75,7 +75,7 @@
     display: flex;
     align-items: center;
 
-    .bp3-icon {
+    .bp4-icon {
       margin-right: 6px;
       margin-bottom: 2px;
     }
@@ -91,6 +91,6 @@
  * outlined (adding a thin border around the full window). This is useless and
  * distracting, so we hide it.
  */
-.bp3-dialog-container {
+.bp4-dialog-container {
   outline: none;
 }

@@ -70,7 +70,14 @@ const nopOpcodes = [
   'OP_NOP10',
 ];
 
-const flowControlOpcodes = ['OP_IF', 'OP_NOTIF', 'OP_ENDIF', 'OP_ELSE'];
+const flowControlOpcodes = [
+  'OP_IF',
+  'OP_NOTIF',
+  'OP_ENDIF',
+  'OP_ELSE',
+  'OP_BEGIN',
+  'OP_UNTIL',
+];
 const signatureCheckingOpcodes = [
   'OP_CHECKSIG',
   'OP_CHECKMULTISIG',
@@ -87,12 +94,35 @@ const blockingOpcodes = [
   'OP_CHECKSEQUENCEVERIFY',
   'OP_CHECKDATASIGVERIFY',
 ];
+const inspectionOpcodes = [
+  'OP_INPUTINDEX',
+  'OP_ACTIVEBYTECODE',
+  'OP_TXVERSION',
+  'OP_TXINPUTCOUNT',
+  'OP_TXOUTPUTCOUNT',
+  'OP_TXLOCKTIME',
+  'OP_UTXOVALUE',
+  'OP_UTXOBYTECODE',
+  'OP_OUTPOINTTXHASH',
+  'OP_OUTPOINTINDEX',
+  'OP_INPUTBYTECODE',
+  'OP_INPUTSEQUENCENUMBER',
+  'OP_OUTPUTVALUE',
+  'OP_OUTPUTBYTECODE',
+  'OP_UTXOTOKENCATEGORY',
+  'OP_UTXOTOKENCOMMITMENT',
+  'OP_UTXOTOKENAMOUNT',
+  'OP_OUTPUTTOKENCATEGORY',
+  'OP_OUTPUTTOKENCOMMITMENT',
+  'OP_OUTPUTTOKENAMOUNT',
+];
 
 const sortedOpcodes = [
   ...unknownOpcodes,
   ...disabledOpcodes,
   ...pushBytesOpcodes,
   ...pushNumberOpcodes,
+  ...inspectionOpcodes,
   ...nopOpcodes,
   ...flowControlOpcodes,
   ...signatureCheckingOpcodes,
@@ -109,6 +139,7 @@ export const languageBCH = {
   flowControlOpcodes,
   signatureCheckingOpcodes,
   blockingOpcodes,
+  inspectionOpcodes,
   otherOpcodes,
 };
 
@@ -167,6 +198,7 @@ export const opcodeHoverProviderBCH = (
 const completableOpcodes = [
   ...flowControlOpcodes,
   ...signatureCheckingOpcodes,
+  ...inspectionOpcodes,
   ...blockingOpcodes,
   ...otherOpcodes,
 ];
@@ -174,34 +206,36 @@ const completableOpcodes = [
 const opcodeSuggestions = (range: Range) =>
   completableOpcodes.map<Monaco.languages.CompletionItem>((opcode) => ({
     label: opcode,
-    detail: descriptions[opcode][1],
-    documentation: descriptions[opcode][0],
+    detail: descriptions[opcode] === undefined ? '' : descriptions[opcode][1],
+    documentation:
+      descriptions[opcode] === undefined ? '' : descriptions[opcode][0],
     kind: Monaco.languages.CompletionItemKind.Function,
     insertText: opcode,
     range,
   }));
 
-export const opcodeCompletionItemProviderBCH: Monaco.languages.CompletionItemProvider = {
-  triggerCharacters: [''],
-  provideCompletionItems: (model, position) => {
-    const query = model.getWordAtPosition(position);
-    const columns = model.getWordUntilPosition(position);
-    const range: Range = {
-      startColumn: columns.startColumn,
-      endColumn: columns.endColumn,
-      startLineNumber: position.lineNumber,
-      endLineNumber: position.lineNumber,
-    };
-    const suggestions =
-      query !== null &&
-      (query.word === 'O' ||
-        query.word === 'OP' ||
-        query.word.slice(0, 3) === 'OP_')
-        ? opcodeSuggestions(range)
-        : [];
-    return { suggestions };
-  },
-};
+export const opcodeCompletionItemProviderBCH: Monaco.languages.CompletionItemProvider =
+  {
+    triggerCharacters: [''],
+    provideCompletionItems: (model, position) => {
+      const query = model.getWordAtPosition(position);
+      const columns = model.getWordUntilPosition(position);
+      const range: Range = {
+        startColumn: columns.startColumn,
+        endColumn: columns.endColumn,
+        startLineNumber: position.lineNumber,
+        endLineNumber: position.lineNumber,
+      };
+      const suggestions =
+        query !== null &&
+        (query.word === 'O' ||
+          query.word === 'OP' ||
+          query.word.slice(0, 3) === 'OP_')
+          ? opcodeSuggestions(range)
+          : [];
+      return { suggestions };
+    },
+  };
 
 export const getKeyOperationDescriptions = (parameter?: string) => {
   const map: { [op in CompilerOperationsKeyBCH]: [string, string] } = {

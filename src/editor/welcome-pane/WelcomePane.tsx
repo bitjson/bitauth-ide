@@ -6,7 +6,7 @@ import { IconNames } from '@blueprintjs/icons';
 import { ActionCreators } from '../../state/reducer';
 import multi from '../../templates/2-of-3.json';
 import recoverable from '../../templates/2-of-2-recoverable.json';
-import { importAuthenticationTemplate } from '../../state/import-export';
+import { ideImportAuthenticationTemplate } from '../../state/import-export';
 import {
   AuthenticationTemplate,
   authenticationTemplateP2pkh,
@@ -25,13 +25,13 @@ const assertValidTemplate = (result: IDETemplate | string) => {
 
 const defaultTemplates = {
   single: assertValidTemplate(
-    importAuthenticationTemplate(authenticationTemplateP2pkh)
+    ideImportAuthenticationTemplate(authenticationTemplateP2pkh)
   ),
   multi: assertValidTemplate(
-    importAuthenticationTemplate(multi as AuthenticationTemplate)
+    ideImportAuthenticationTemplate(multi as AuthenticationTemplate)
   ),
   recoverable: assertValidTemplate(
-    importAuthenticationTemplate(recoverable as AuthenticationTemplate)
+    ideImportAuthenticationTemplate(recoverable as AuthenticationTemplate)
   ),
 };
 

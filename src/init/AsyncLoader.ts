@@ -1,48 +1,26 @@
 import { connect } from 'react-redux';
 import { ActionCreators } from '../state/reducer';
-import { AppState } from '../state/types';
-import {
-  instantiateSecp256k1,
-  instantiateSha256,
-  instantiateVirtualMachineBCH,
-  instantiateRipemd160,
-  instantiateSha512,
-} from '@bitauth/libauth';
 import { base64ToBin, binToUtf8 } from '@bitauth/libauth';
 import { inflate } from 'pako';
-import { importAuthenticationTemplate } from '../state/import-export';
+import { ideImportAuthenticationTemplate } from '../state/import-export';
 import { getRoute, Routes } from './routing';
-import { instantiateVirtualMachineBCHTxInt } from './txint-vm';
 
 const clearRoute = () => window.history.pushState(null, 'Bitauth IDE', '/');
 
-export const AsyncLoader = connect(
-  ({ crypto, authenticationVirtualMachines }: AppState) => ({
-    crypto,
-    authenticationVirtualMachines,
-  }),
-  {
-    loadVMsAndCrypto: ActionCreators.loadVMsAndCrypto,
-    attemptInvalidImport: ActionCreators.attemptInvalidImport,
-    importTemplate: ActionCreators.importTemplate,
-    openTemplateSettings: ActionCreators.openTemplateSettings,
-    openWelcomePane: ActionCreators.openWelcomePane,
-    openGuide: ActionCreators.openGuide,
-  }
-)(
+export const AsyncLoader = connect(() => ({}), {
+  attemptInvalidImport: ActionCreators.attemptInvalidImport,
+  importTemplate: ActionCreators.importTemplate,
+  openTemplateSettings: ActionCreators.openTemplateSettings,
+  openWelcomePane: ActionCreators.openWelcomePane,
+  openGuide: ActionCreators.openGuide,
+})(
   ({
-    crypto,
-    authenticationVirtualMachines,
-    loadVMsAndCrypto,
     attemptInvalidImport,
     importTemplate,
     openTemplateSettings,
     openWelcomePane,
     openGuide,
   }: {
-    crypto: AppState['crypto'];
-    authenticationVirtualMachines: AppState['authenticationVirtualMachines'];
-    loadVMsAndCrypto: typeof ActionCreators.loadVMsAndCrypto;
     attemptInvalidImport: typeof ActionCreators.attemptInvalidImport;
     importTemplate: typeof ActionCreators.importTemplate;
     openTemplateSettings: typeof ActionCreators.openTemplateSettings;
@@ -52,49 +30,6 @@ export const AsyncLoader = connect(
     const supportsBigInt = typeof BigInt !== 'undefined';
     if (!supportsBigInt) {
       return null;
-    }
-
-    /**
-     * If running inside Cypress, avoid automatically re-instantiating WASM
-     * instances unless `window.allowAutomaticLoadingOfVmsAndCrypto` is `true`.
-     * (WASM instances are re-used between most tests.)
-     */
-    const automaticallyLoadWasm =
-      (window as any).Cypress === undefined ||
-      (window as any).allowAutomaticLoadingOfVmsAndCrypto === true;
-
-    if (
-      automaticallyLoadWasm &&
-      (crypto === null || authenticationVirtualMachines === null)
-    ) {
-      setTimeout(() => {
-        Promise.all([
-          instantiateRipemd160(),
-          instantiateSecp256k1(),
-          instantiateSha256(),
-          instantiateSha512(),
-          instantiateVirtualMachineBCH(),
-          instantiateVirtualMachineBCHTxInt(),
-        ]).then(
-          ([ripemd160, secp256k1, sha256, sha512, latestBCH, txIntVm]) => {
-            loadVMsAndCrypto({
-              vms: {
-                BCH_2020_05: latestBCH,
-                BCH_2022_05_SPEC: txIntVm,
-                // TODO: add other VMs
-                BTC_2017_08: latestBCH,
-                BSV_2020_02: latestBCH,
-              },
-              crypto: {
-                ripemd160,
-                secp256k1,
-                sha256,
-                sha512,
-              },
-            });
-          }
-        );
-      }, 0);
     }
 
     const howToResolve = `The invalid template will now be shown in the import dialog: you can manually edit the JSON to correct any validation errors, then import the template. If you have trouble, let us know in the community chat, we're happy to help!`;
@@ -111,7 +46,7 @@ export const AsyncLoader = connect(
             inflate(base64ToBin(base64UrlToBase64(payload)))
           );
           const parsed = JSON.parse(uncompressed);
-          const importedTemplate = importAuthenticationTemplate(parsed);
+          const importedTemplate = ideImportAuthenticationTemplate(parsed);
           if (typeof importedTemplate === 'string') {
             const error = `This link may have been created manually or with an outdated version of Bitauth IDE: the link is valid, but the authentication template it encodes is not.\n\n${howToResolve}`;
             window.alert(error);
@@ -172,7 +107,7 @@ export const AsyncLoader = connect(
                   `Importing '${filename}' from ${gistUrl} as an authentication template.`
                 );
                 const parsed = JSON.parse(content);
-                const template = importAuthenticationTemplate(parsed);
+                const template = ideImportAuthenticationTemplate(parsed);
                 if (typeof template === 'string') {
                   const error = `There is a problem with the imported GitHub Gist: this authentication template has validation errors. It may have been created manually or with an outdated version of Bitauth IDE.\n\n${howToResolve}`;
                   window.alert(error);

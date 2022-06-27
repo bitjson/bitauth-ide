@@ -1,6 +1,6 @@
 import {
+  AuthenticationErrorBCH2022,
   AuthenticationErrorCommon,
-  AuthenticationErrorBCH,
   binToHex,
 } from '@bitauth/libauth';
 import { IDESupportedProgramState, ScriptEditorFrame } from '../editor-types';
@@ -8,8 +8,15 @@ import React from 'react';
 import { Popover } from '@blueprintjs/core';
 import { abbreviateStackItem } from '../common';
 
-export type PossibleErrors = AuthenticationErrorCommon | AuthenticationErrorBCH;
+export type PossibleErrors =
+  | AuthenticationErrorCommon
+  | AuthenticationErrorBCH2022;
 
+/**
+ * This predates Libauth v2, where VM error messages can include contextual
+ * information. It would probably be better to improve those messages instead of
+ * expanding this.
+ */
 export const vmErrorAssistanceBCH: {
   [error in PossibleErrors]?: (
     state: IDESupportedProgramState
@@ -19,7 +26,7 @@ export const vmErrorAssistanceBCH: {
     <span>
       This error occurs when the transaction's locktime hasn't reached the
       locktime required by this operation. In this scenario, the transaction's
-      locktime is set to <code>{state.locktime}</code>.
+      locktime is set to <code>{state.program.transaction.locktime}</code>.
     </span>
   ),
   [AuthenticationErrorCommon.nonNullSignatureFailure]: (state) => {
@@ -205,7 +212,8 @@ export const compilationErrorAssistance: {
     },
   },
   {
-    regex: /the "transactionContext" property was not provided in the compilation data/,
+    regex:
+      /the "transactionContext" property was not provided in the compilation data/,
     generateHints: (error, frame) => {
       const [identifier] = extractGroupsOrLogError(
         error,

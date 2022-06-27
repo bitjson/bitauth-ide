@@ -12,7 +12,7 @@
       line-height: 0;
       color: var(--toolbar-icon-color);
       visibility: hidden;
-      .bp3-button {
+      .bp4-button {
         background: none;
         border: none;
         box-shadow: none;
@@ -20,7 +20,7 @@
         height: 16px;
         padding: 0;
         font-size: 12px;
-        &:hover .bp3-icon {
+        &:hover .bp4-icon {
           color: #fff;
         }
         svg {

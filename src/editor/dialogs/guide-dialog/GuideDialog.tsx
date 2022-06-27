@@ -334,9 +334,9 @@ export const GuideDialog = ({
           <a
             target="_blank"
             rel="noopener noreferrer"
-            href="https://github.com/bitauth/bitcoin-ts"
+            href="https://github.com/bitauth/libauth"
           >
-            bitcoin-ts
+            libauth
           </a>{' '}
           virtual machine implementation.
         </p>

@@ -50,6 +50,7 @@ export const bitauthDarkMonarchTheme: Monaco.editor.IStandaloneThemeData = {
     { token: 'opcode.signature', foreground: fuchsia },
     { token: 'opcode.flow-control', foreground: salmon },
     { token: 'opcode.blocking', foreground: oak },
+    { token: 'opcode.inspection', foreground: darkOlive },
     { token: 'opcode.other', foreground: blue },
     { token: 'identifier', foreground: lightBlue },
     { token: 'literal.bigint', foreground: lightOlive },
@@ -63,7 +64,7 @@ export const bitauthDarkMonarchTheme: Monaco.editor.IStandaloneThemeData = {
   },
 };
 
-export const bitauthTemplatingLanguageMonarchLangaugeConfiguration = (
+export const bitauthTemplatingLanguageMonarchLanguageConfiguration = (
   monacoLanguages: typeof Monaco.languages
 ): Monaco.languages.LanguageConfiguration => ({
   autoClosingPairs: [
@@ -74,6 +75,7 @@ export const bitauthTemplatingLanguageMonarchLangaugeConfiguration = (
     { open: '/**', close: ' */', notIn: ['string'] },
     { open: 'OP_IF', close: ' OP_ENDIF', notIn: ['string', 'comment'] },
     { open: 'OP_NOTIF', close: ' OP_ENDIF', notIn: ['string', 'comment'] },
+    { open: 'OP_BEGIN', close: ' <1> OP_UNTIL', notIn: ['string', 'comment'] },
   ],
   brackets: [
     ['<', '>'],
@@ -104,7 +106,7 @@ export const bitauthTemplatingLanguageMonarchLangaugeConfiguration = (
     {
       // e.g.  * ...|
       beforeText: /^(\t|[ ])*[ ]\*([ ]([^*]|\*(?!\/))*)?$/,
-      oneLineAboveText: /^(\s*(\/\*\*|\*)).*/,
+      previousLineText: /^(\s*(\/\*\*|\*)).*/,
       action: {
         indentAction: monacoLanguages.IndentAction.None,
         appendText: '* ',
@@ -141,6 +143,7 @@ export const bitauthTemplatingLanguageMonarchLanguage = {
   blockingOpcodes: languageBCH.blockingOpcodes,
   pushBytesOpcodes: languageBCH.pushBytesOpcodes,
   pushNumberOpcodes: languageBCH.pushNumberOpcodes,
+  inspectionOpcodes: languageBCH.inspectionOpcodes,
   disabledOpcodes: [
     ...languageBCH.disabledOpcodes,
     ...languageBCH.unknownOpcodes,
@@ -164,6 +167,7 @@ export const bitauthTemplatingLanguageMonarchLanguage = {
             '@blockingOpcodes': 'opcode.blocking',
             '@pushBytesOpcodes': 'opcode.push',
             '@pushNumberOpcodes': 'opcode.push-number',
+            '@inspectionOpcodes': 'opcode.inspection',
             '@disabledOpcodes': 'opcode.disabled',
             '@otherOpcodes': 'opcode.other',
             '@default': 'identifier',
@@ -204,7 +208,7 @@ export const registerBitauthTemplatingLanguage = (monaco: typeof Monaco) => {
   );
   monaco.languages.setLanguageConfiguration(
     bitauthTemplatingLanguage,
-    bitauthTemplatingLanguageMonarchLangaugeConfiguration(monaco.languages)
+    bitauthTemplatingLanguageMonarchLanguageConfiguration(monaco.languages)
   );
   monaco.editor.defineTheme(bitauthDark, bitauthDarkMonarchTheme);
   monaco.languages.json.jsonDefaults.setDiagnosticsOptions({

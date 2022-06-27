@@ -7,7 +7,6 @@ import {
 import {
   AppState,
   IDEMode,
-  IDELoadedVMsAndCrypto,
   ActiveDialog,
   BaseScriptType,
   IDETemplateLockingScript,
@@ -17,20 +16,20 @@ import {
   IDEVariable,
   WalletTreeClass,
   IDEActivatableScript,
+  IDETemplateUnlockingScript,
+  IDETemplateTestCheckScript,
+  IDETemplateTestSetupScript,
 } from './types';
 import { defaultState, emptyTemplate } from './defaults';
 import { unknownValue } from '../utils';
 import { createInsecureUuidV4 } from './utils';
-import { importAuthenticationTemplate } from './import-export';
+import { ideImportAuthenticationTemplate } from './import-export';
 import { EvaluationViewerSettings } from '../editor/editor-types';
+import { AuthenticationTemplateScriptLocking } from '@bitauth/libauth';
 
 class App extends ImmerReducer<AppState> {
   setIDEMode(mode: IDEMode) {
     this.draftState.ideMode = mode;
-  }
-  loadVMsAndCrypto({ vms, crypto }: IDELoadedVMsAndCrypto) {
-    this.draftState.authenticationVirtualMachines = vms;
-    this.draftState.crypto = crypto;
   }
   openWelcomePane() {
     this.draftState.currentEditingMode = 'welcome';
@@ -64,7 +63,7 @@ class App extends ImmerReducer<AppState> {
     this.draftState.activeDialog = ActiveDialog.importExport;
   }
   resetTemplate() {
-    const empty = importAuthenticationTemplate(emptyTemplate);
+    const empty = ideImportAuthenticationTemplate(emptyTemplate);
     if (typeof empty === 'string') {
       throw new Error('Invalid empty template.');
     }
@@ -103,9 +102,8 @@ class App extends ImmerReducer<AppState> {
     this.draftState.currentlyEditingInternalId = internalId;
   }
   updateEntityName(internalId: string, name: string) {
-    this.draftState.currentTemplate.entitiesByInternalId[
-      internalId
-    ].name = name;
+    this.draftState.currentTemplate.entitiesByInternalId[internalId].name =
+      name;
   }
   updateEntityDescription(internalId: string, description: string) {
     this.draftState.currentTemplate.entitiesByInternalId[
@@ -142,9 +140,9 @@ class App extends ImmerReducer<AppState> {
     ].scriptInternalIds = result;
   }
   deleteEntity(internalId: string) {
-    const variables = this.draftState.currentTemplate.entitiesByInternalId[
-      internalId
-    ].variableInternalIds;
+    const variables =
+      this.draftState.currentTemplate.entitiesByInternalId[internalId]
+        .variableInternalIds;
     variables.forEach((variableInternalId) => {
       delete this.draftState.currentTemplate.variablesByInternalId[
         variableInternalId
@@ -177,12 +175,12 @@ class App extends ImmerReducer<AppState> {
     variable.description = description;
     variable.id = id;
     variable.type = type;
-    this.draftState.currentTemplate.variablesByInternalId[
-      variableInternalId
-    ] = variable;
-    const target = this.draftState.currentTemplate.entitiesByInternalId[
-      owningEntityInternalId
-    ].variableInternalIds;
+    this.draftState.currentTemplate.variablesByInternalId[variableInternalId] =
+      variable;
+    const target =
+      this.draftState.currentTemplate.entitiesByInternalId[
+        owningEntityInternalId
+      ].variableInternalIds;
     if (target.indexOf(variableInternalId) === -1) {
       target.push(variableInternalId);
     }
@@ -192,9 +190,9 @@ class App extends ImmerReducer<AppState> {
       this.draftState.currentTemplate.entitiesByInternalId
     );
     entities.forEach((entityInternalId) => {
-      const variables = this.draftState.currentTemplate.entitiesByInternalId[
-        entityInternalId
-      ].variableInternalIds;
+      const variables =
+        this.draftState.currentTemplate.entitiesByInternalId[entityInternalId]
+          .variableInternalIds;
       this.draftState.currentTemplate.entitiesByInternalId[
         entityInternalId
       ].variableInternalIds = variables.filter(
@@ -204,9 +202,8 @@ class App extends ImmerReducer<AppState> {
     delete this.draftState.currentTemplate.variablesByInternalId[internalId];
   }
   updateScript({ internalId, script }: { internalId: string; script: string }) {
-    this.draftState.currentTemplate.scriptsByInternalId[
-      internalId
-    ].script = script;
+    this.draftState.currentTemplate.scriptsByInternalId[internalId].script =
+      script;
   }
   activateScript(internalId: string) {
     this.draftState.currentEditingMode = 'script';
@@ -239,7 +236,8 @@ class App extends ImmerReducer<AppState> {
         this.draftState.lastSelectedScenarioInternalId
       )
     ) {
-      this.draftState.currentScenarioInternalId = this.draftState.lastSelectedScenarioInternalId;
+      this.draftState.currentScenarioInternalId =
+        this.draftState.lastSelectedScenarioInternalId;
       return;
     }
 
@@ -287,18 +285,17 @@ class App extends ImmerReducer<AppState> {
     internalId,
     name,
     id,
-    isP2SH,
+    lockingType,
     isPushed,
   }: {
     internalId: string;
     name: string;
     id: string;
-    isP2SH?: boolean;
+    lockingType?: AuthenticationTemplateScriptLocking['lockingType'];
     isPushed?: boolean;
   }) {
-    const currentScript = this.draftState.currentTemplate.scriptsByInternalId[
-      internalId
-    ];
+    const currentScript =
+      this.draftState.currentTemplate.scriptsByInternalId[internalId];
     if (currentScript.type === 'test-check') {
       const setupInternalId = currentScript.testSetupInternalId;
       this.draftState.currentTemplate.scriptsByInternalId[
@@ -308,15 +305,19 @@ class App extends ImmerReducer<AppState> {
     }
     this.draftState.currentTemplate.scriptsByInternalId[internalId].name = name;
     this.draftState.currentTemplate.scriptsByInternalId[internalId].id = id;
-    if (isP2SH !== undefined) {
-      (this.draftState.currentTemplate.scriptsByInternalId[
-        internalId
-      ] as IDETemplateLockingScript).isP2SH = isP2SH;
+    if (lockingType !== undefined) {
+      (
+        this.draftState.currentTemplate.scriptsByInternalId[
+          internalId
+        ] as IDETemplateLockingScript
+      ).lockingType = lockingType;
     }
     if (isPushed !== undefined) {
-      (this.draftState.currentTemplate.scriptsByInternalId[
-        internalId
-      ] as IDETemplateTestedScript).pushed = isPushed;
+      (
+        this.draftState.currentTemplate.scriptsByInternalId[
+          internalId
+        ] as IDETemplateTestedScript
+      ).pushed = isPushed;
     }
   }
   createScript(script: {
@@ -330,67 +331,64 @@ class App extends ImmerReducer<AppState> {
     this.draftState.currentEditingMode = 'script';
     switch (script.type) {
       case 'isolated':
-        this.draftState.currentTemplate.scriptsByInternalId[
-          script.internalId
-        ] = {
-          internalId: script.internalId,
-          type: script.type,
-          script: script.contents || '',
-          id: script.id,
-          name: script.name,
-        };
+        this.draftState.currentTemplate.scriptsByInternalId[script.internalId] =
+          {
+            internalId: script.internalId,
+            type: script.type,
+            script: script.contents || '',
+            id: script.id,
+            name: script.name,
+          } as IDETemplateIsolatedScript;
         this.draftState.currentlyEditingInternalId = script.internalId;
         return;
       case 'locking':
         const childUnlockingId = createInsecureUuidV4();
-        this.draftState.currentTemplate.scriptsByInternalId[
-          script.internalId
-        ] = {
-          internalId: script.internalId,
-          type: script.type,
-          script: '',
-          id: script.id,
-          name: script.name,
-          childInternalIds: [childUnlockingId],
-          isP2SH: true,
-        };
-        this.draftState.currentTemplate.scriptsByInternalId[
-          childUnlockingId
-        ] = {
-          ageLock: undefined,
-          estimate: undefined,
-          failsInternalIds: [],
-          id: `unlock_${script.id}`,
-          internalId: childUnlockingId,
-          name: 'Unlock',
-          parentInternalId: script.internalId,
-          passesInternalIds: [],
-          script: '',
-          timeLockType: undefined,
-          type: 'unlocking',
-        };
+        this.draftState.currentTemplate.scriptsByInternalId[script.internalId] =
+          {
+            internalId: script.internalId,
+            type: script.type,
+            script: '',
+            id: script.id,
+            name: script.name,
+            childInternalIds: [childUnlockingId],
+            lockingType: 'p2sh20',
+          } as IDETemplateLockingScript;
+        this.draftState.currentTemplate.scriptsByInternalId[childUnlockingId] =
+          {
+            ageLock: undefined,
+            estimate: undefined,
+            failsInternalIds: [],
+            id: `unlock_${script.id}`,
+            internalId: childUnlockingId,
+            name: 'Unlock',
+            parentInternalId: script.internalId,
+            passesInternalIds: [],
+            script: '',
+            timeLockType: undefined,
+            type: 'unlocking',
+          } as IDETemplateUnlockingScript;
         this.draftState.currentlyEditingInternalId = undefined;
         return;
       case 'unlocking':
         const lockingInternalId = script.parentInternalId as string;
-        this.draftState.currentTemplate.scriptsByInternalId[
-          script.internalId
-        ] = {
-          ageLock: undefined,
-          estimate: undefined,
-          failsInternalIds: [],
-          id: script.id,
-          internalId: script.internalId,
-          name: script.name,
-          parentInternalId: lockingInternalId,
-          passesInternalIds: [],
-          script: '',
-          timeLockType: undefined,
-          type: script.type,
-        };
-        const lock = this.draftState.currentTemplate.scriptsByInternalId[
-          lockingInternalId
-        ];
+        this.draftState.currentTemplate.scriptsByInternalId[script.internalId] =
+          {
+            ageLock: undefined,
+            estimate: undefined,
+            failsInternalIds: [],
+            id: script.id,
+            internalId: script.internalId,
+            name: script.name,
+            parentInternalId: lockingInternalId,
+            passesInternalIds: [],
+            script: '',
+            timeLockType: undefined,
+            type: script.type,
+          } as IDETemplateUnlockingScript;
+        const lock =
+          this.draftState.currentTemplate.scriptsByInternalId[
+            lockingInternalId
+          ];
         if (lock.type !== 'locking') {
           this.draftState.currentTemplate.scriptsByInternalId[
             lockingInternalId
@@ -398,15 +396,17 @@ class App extends ImmerReducer<AppState> {
             childInternalIds: [],
             id: lock.id,
             internalId: lock.internalId,
-            isP2SH: true,
+            lockingType: 'p2sh20',
             name: lock.name,
             script: lock.script,
             type: 'locking',
-          };
+          } as IDETemplateLockingScript;
         }
-        (this.draftState.currentTemplate.scriptsByInternalId[
-          lockingInternalId
-        ] as IDETemplateLockingScript).childInternalIds.push(script.internalId);
+        (
+          this.draftState.currentTemplate.scriptsByInternalId[
+            lockingInternalId
+          ] as IDETemplateLockingScript
+        ).childInternalIds.push(script.internalId);
         this.draftState.currentlyEditingInternalId = script.internalId;
         return;
       case 'test-setup':
@@ -421,7 +421,7 @@ class App extends ImmerReducer<AppState> {
           internalId: checkInternalId,
           name: '',
           testSetupInternalId,
-        };
+        } as IDETemplateTestCheckScript;
         this.draftState.currentTemplate.scriptsByInternalId[
           testSetupInternalId
         ] = {
@@ -434,14 +434,14 @@ class App extends ImmerReducer<AppState> {
           script: '',
           testCheckInternalId: checkInternalId,
           type: script.type,
-        };
+        } as IDETemplateTestSetupScript;
         const parent = this.draftState.currentTemplate.scriptsByInternalId[
           parentInternalId
         ] as IDETemplateIsolatedScript | IDETemplateTestedScript;
         if (parent.type === 'tested') {
           parent.childInternalIds.push(testSetupInternalId);
         } else {
-          const cast = (parent as unknown) as IDETemplateTestedScript;
+          const cast = parent as unknown as IDETemplateTestedScript;
           cast.type = 'tested';
           cast.childInternalIds = [testSetupInternalId];
         }
@@ -451,9 +451,8 @@ class App extends ImmerReducer<AppState> {
     }
   }
   deleteScript(internalId: string) {
-    const deleteTarget = this.draftState.currentTemplate.scriptsByInternalId[
-      internalId
-    ];
+    const deleteTarget =
+      this.draftState.currentTemplate.scriptsByInternalId[internalId];
     const deleteInternalIds = [
       internalId,
       ...(deleteTarget.type === 'locking' || deleteTarget.type === 'tested'
@@ -493,9 +492,8 @@ class App extends ImmerReducer<AppState> {
       this.draftState.currentTemplate.entitiesByInternalId
     );
     entities.forEach((entityInternalId) => {
-      const entity = this.draftState.currentTemplate.entitiesByInternalId[
-        entityInternalId
-      ];
+      const entity =
+        this.draftState.currentTemplate.entitiesByInternalId[entityInternalId];
       this.draftState.currentTemplate.entitiesByInternalId[
         entityInternalId
       ].scriptInternalIds = entity.scriptInternalIds.filter(
@@ -509,15 +507,16 @@ class App extends ImmerReducer<AppState> {
     this.draftState.activeDialog = ActiveDialog.none;
   }
   importTemplate(template: AppState['currentTemplate']) {
-    const firstSupportedVm = template.supportedVirtualMachines.find<IDESupportedVM>(
-      (templateSupported): templateSupported is IDESupportedVM =>
-        [
-          'BCH_2022_05_SPEC',
-          'BCH_2020_05',
-          'BSV_2020_02',
-          'BTC_2017_08',
-        ].includes(templateSupported)
-    );
+    const firstSupportedVm =
+      template.supportedVirtualMachines.find<IDESupportedVM>(
+        (templateSupported): templateSupported is IDESupportedVM =>
+          [
+            'BCH_2022_05_SPEC',
+            'BCH_2020_05',
+            'BSV_2020_02',
+            'BTC_2017_08',
+          ].includes(templateSupported)
+      );
     if (
       !template.supportedVirtualMachines.includes(this.state.currentVmId) &&
       firstSupportedVm !== undefined

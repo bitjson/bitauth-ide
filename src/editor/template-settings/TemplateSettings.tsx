@@ -16,19 +16,19 @@ import { ActionCreators } from '../../state/reducer';
 import { AuthenticationVirtualMachineIdentifier } from '@bitauth/libauth';
 
 const availableVms: { [key in IDESupportedVM]: React.ReactNode } = {
-  BCH_2020_05: (
+  BCH_2022_05: (
     <span className="vm">
-      <code>BCH_2020_05</code>
+      <code>BCH_2022_05</code>
       <span className="chain">Bitcoin Cash</span>
-      <span className="version">2020 May Update</span>
+      <span className="version">2022 May Upgrade</span>
       <span className="tag live">live</span>
     </span>
   ),
-  BCH_2022_05_SPEC: (
+  BCH_SPEC: (
     <span className="vm">
-      <code>BCH_2022_05_SPEC</code>
+      <code>BCH_CHIPs</code>
       <span className="chain">Bitcoin Cash</span>
-      <span className="version">2022 May Proposal (TxInt)</span>
+      <span className="version">2023 May Proposals</span>
       <span className="tag spec">Spec</span>
     </span>
   ),
@@ -65,7 +65,8 @@ interface TemplateSettingsDispatch {
   showWelcomePane: typeof ActionCreators.showWelcomePane;
 }
 
-const urlRegExp = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&//=]*)/g;
+const urlRegExp =
+  /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&//=]*)/g;
 const captureGroups = 4;
 const activateLinks = (description: string) => {
   const matches = description.match(urlRegExp);
@@ -149,7 +150,7 @@ export const TemplateSettings = connect(
         <div className="description">
           {isEditing ? (
             <EditableText
-              maxLength={10000}
+              maxLength={50000}
               minLines={3}
               multiline={true}
               placeholder="A brief description of this authentication template..."
