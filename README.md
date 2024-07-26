@@ -58,7 +58,7 @@ This will open Bitauth IDE in development mode.
 
 Bitauth IDE uses [Yarn's Zero-Installs strategy](https://yarnpkg.com/features/zero-installs) – all of [Bitauth IDE's dependencies are tracked in an independent git repository](https://github.com/bitauth/bitauth-ide-dependencies), and the dependency repo is automatically shallow-cloned into the `.yarn` directory.
 
-To run all tests:
+To run all tests, install the playwright browsers with `yarn test:install`, then:
 
 ```sh
 yarn test

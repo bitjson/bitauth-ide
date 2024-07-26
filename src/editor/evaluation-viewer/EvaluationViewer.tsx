@@ -30,7 +30,13 @@ import {
   summarizeDebugTrace,
   vmNumberToBigInt,
 } from '@bitauth/libauth';
-import { Button, HTMLSelect, Popover, Tooltip } from '@blueprintjs/core';
+import {
+  Button,
+  HTMLSelect,
+  Popover,
+  Slider,
+  Tooltip,
+} from '@blueprintjs/core';
 import {
   Cross,
   Error,
@@ -114,16 +120,22 @@ const getStackItemDisplaySettings = (
       label: name,
     };
   }
-  const number = vmNumberToBigInt(item);
+  const number = vmNumberToBigInt(item, {
+    maximumVmNumberByteLength:
+      settings.vmNumbersDisplayFormat === 'bigint'
+        ? 258
+        : settings.supportBigInt
+          ? 19
+          : 8,
+  });
   if (typeof number === 'bigint') {
-    if (settings.scriptNumbersDisplayFormat === 'integer') {
-      return {
-        hex,
-        type: 'number' as const,
-        label: `${number}`,
-      };
+    if (
+      settings.vmNumbersDisplayFormat === 'integer' ||
+      settings.vmNumbersDisplayFormat === 'bigint'
+    ) {
+      return { hex, type: 'number' as const, label: `${number}` };
     }
-    if (settings.scriptNumbersDisplayFormat === 'binary') {
+    if (settings.vmNumbersDisplayFormat === 'binary') {
       return {
         hex,
         type: 'binary' as const,
@@ -131,11 +143,7 @@ const getStackItemDisplaySettings = (
       };
     }
   }
-  return {
-    hex,
-    type: 'hex' as const,
-    label: settings.abbreviateLongStackItems ? abbreviateStackItem(hex) : hex,
-  };
+  return { hex, type: 'hex' as const, label: hex };
 };
 
 const hasVmHelp = (
@@ -215,6 +223,7 @@ const EvaluationLine = ({
   lineNumber,
   lookup,
   settings,
+  changeEvaluationViewerSettings,
 }: {
   hasError: boolean;
   hasActiveCursor: boolean;
@@ -222,6 +231,7 @@ const EvaluationLine = ({
   lineNumber: number;
   lookup?: StackItemIdentifyFunction;
   settings: EvaluationViewerSettings;
+  changeEvaluationViewerSettings: typeof ActionCreators.changeEvaluationViewerSettings;
 }) => {
   const firstSkippedSpacer =
     line.spacers === undefined
@@ -252,7 +262,7 @@ const EvaluationLine = ({
             : index === stack.length - (settings.groupStackItemsDeeperThan + 1)
               ? stack.slice(
                   0,
-                  stack.length - (settings.groupStackItemsDeeperThan + 1),
+                  stack.length - settings.groupStackItemsDeeperThan,
                 )
               : undefined,
       )
@@ -277,20 +287,70 @@ const EvaluationLine = ({
         console.log(line.state);
       }}
     >
-      {line.spacers?.slice(0, sliceSpacersAtIndex).map((type, index) => (
-        <span
-          key={index}
-          className={`spacer ${
-            type === EvaluationViewerSpacer.evaluation
-              ? 'spacer-evaluation'
-              : type === EvaluationViewerSpacer.executedConditional
-                ? 'spacer-conditional-executed'
-                : 'spacer-conditional-skipped'
-          }`}
-        >
-          &nbsp;
-        </span>
-      ))}
+      {line.spacers?.slice(0, sliceSpacersAtIndex).map((type, index) =>
+        typeof type === 'object' ? (
+          <Tooltip
+            content={`Evaluated ${type.maximumIterationIndex + 1} time${type.maximumIterationIndex === 0 ? '' : 's'}, displaying iteration ${type.iterationIndex + 1} (index ${type.iterationIndex}).`}
+            key={index}
+            portalClassName="loop-tooltip"
+            position="bottom-right"
+          >
+            <Popover
+              position="left"
+              content={
+                type.maximumIterationIndex === 0 ? (
+                  <>
+                    This <code>OP_BEGIN</code> is not repeated.
+                  </>
+                ) : (
+                  <div className="loop-controls">
+                    <Slider
+                      min={0}
+                      max={type.maximumIterationIndex}
+                      stepSize={1}
+                      labelStepSize={
+                        type.maximumIterationIndex < 3
+                          ? 1
+                          : Math.round(type.maximumIterationIndex / 2)
+                      }
+                      value={type.iterationIndex}
+                      onChange={(value) => {
+                        const newIndexes = settings.loopViewingIndexes.slice();
+                        newIndexes.splice(type.loopIndex, 1, value);
+                        changeEvaluationViewerSettings({
+                          ...settings,
+                          loopViewingIndexes: newIndexes,
+                        });
+                      }}
+                    />
+                  </div>
+                )
+              }
+              portalClassName="stack-popover"
+              interactionKind="click"
+            >
+              <span key={index} className={'spacer spacer-loop loop-start'}>
+                {type.iterationIndex}
+              </span>
+            </Popover>
+          </Tooltip>
+        ) : (
+          <span
+            key={index}
+            className={`spacer ${
+              type === EvaluationViewerSpacer.evaluation
+                ? 'spacer-evaluation'
+                : type === EvaluationViewerSpacer.loop
+                  ? 'spacer-loop'
+                  : type === EvaluationViewerSpacer.executedConditional
+                    ? 'spacer-conditional-executed'
+                    : 'spacer-conditional-skipped'
+            }`}
+          >
+            &nbsp;
+          </span>
+        ),
+      )}
       {hasError ? (
         <VmErrorLine state={line.state!}></VmErrorLine>
       ) : lineNumber === 1 && line.state?.ip === 0 ? (
@@ -321,7 +381,11 @@ const EvaluationLine = ({
           return stackItem(
             itemIndex,
             hex,
-            <span className={`stack-item ${type}`}>{label}</span>,
+            <span className={`stack-item ${type}`}>
+              {settings.abbreviateLongStackItems
+                ? abbreviateStackItem(label)
+                : label}
+            </span>,
           );
         })
       )}
@@ -571,9 +635,9 @@ export const ViewerControls = ({
         </Popover>
       )}
 
-      {evaluationViewerSettings.scriptNumbersDisplayFormat === 'integer' ? (
+      {evaluationViewerSettings.vmNumbersDisplayFormat === 'integer' ? (
         <Tooltip
-          content="Showing Script Numbers in integer format"
+          content="Showing VM Numbers in integer format"
           portalClassName="control-tooltip"
           position="bottom-right"
         >
@@ -581,16 +645,18 @@ export const ViewerControls = ({
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
-                scriptNumbersDisplayFormat: 'hex',
+                vmNumbersDisplayFormat: evaluationViewerSettings.supportBigInt
+                  ? 'bigint'
+                  : 'hex',
               });
             }}
           >
             <span className="number-format">123</span>
           </Button>
         </Tooltip>
-      ) : evaluationViewerSettings.scriptNumbersDisplayFormat === 'hex' ? (
+      ) : evaluationViewerSettings.vmNumbersDisplayFormat === 'bigint' ? (
         <Tooltip
-          content="Showing Script Numbers in hex format"
+          content="Showing VM Numbers in integer format (up to 258 bytes)"
           portalClassName="control-tooltip"
           position="bottom-right"
         >
@@ -598,7 +664,24 @@ export const ViewerControls = ({
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
-                scriptNumbersDisplayFormat: 'binary',
+                vmNumbersDisplayFormat: 'hex',
+              });
+            }}
+          >
+            <span className="number-format">123...</span>
+          </Button>
+        </Tooltip>
+      ) : evaluationViewerSettings.vmNumbersDisplayFormat === 'hex' ? (
+        <Tooltip
+          content="Showing VM Numbers in hex format"
+          portalClassName="control-tooltip"
+          position="bottom-right"
+        >
+          <Button
+            onClick={() => {
+              changeEvaluationViewerSettings({
+                ...evaluationViewerSettings,
+                vmNumbersDisplayFormat: 'binary',
               });
             }}
           >
@@ -607,7 +690,7 @@ export const ViewerControls = ({
         </Tooltip>
       ) : (
         <Tooltip
-          content="Showing Script Numbers in binary format"
+          content="Showing VM Numbers in binary format"
           portalClassName="control-tooltip"
           position="bottom-right"
         >
@@ -615,7 +698,7 @@ export const ViewerControls = ({
             onClick={() => {
               changeEvaluationViewerSettings({
                 ...evaluationViewerSettings,
-                scriptNumbersDisplayFormat: 'integer',
+                vmNumbersDisplayFormat: 'integer',
               });
             }}
           >
@@ -860,6 +943,9 @@ export const EvaluationViewer = (props: {
                     lineNumber={0}
                     lookup={activeLookup}
                     settings={props.evaluationViewerSettings}
+                    changeEvaluationViewerSettings={
+                      props.changeEvaluationViewerSettings
+                    }
                   />
                 )}
               </div>
@@ -875,6 +961,9 @@ export const EvaluationViewer = (props: {
                   lineNumber={lineIndex + 1}
                   lookup={activeLookup}
                   settings={props.evaluationViewerSettings}
+                  changeEvaluationViewerSettings={
+                    props.changeEvaluationViewerSettings
+                  }
                 />
               ))}
             </div>

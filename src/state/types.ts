@@ -241,6 +241,8 @@ export type DisableId = true;
  */
 export const IDEVms = [
   'BCH_2023_05',
+  'BCH_2025_05',
+  'BCH_2026_05',
   'BCH_SPEC',
   'BSV_2020_02',
   'BTC_2017_08',
@@ -422,7 +424,7 @@ export type CurrentVariables = {
 export type IDESupportedProgramState = AuthenticationProgramStateMinimum &
   AuthenticationProgramStateStack &
   AuthenticationProgramStateAlternateStack &
-  AuthenticationProgramStateControlStack<boolean | number> &
+  AuthenticationProgramStateControlStack &
   AuthenticationProgramStateError &
   AuthenticationProgramStateCodeSeparator &
   AuthenticationProgramStateSignatureAnalysis &
@@ -433,10 +435,11 @@ export type IDESupportedProgramState = AuthenticationProgramStateMinimum &
  */
 export type EvaluationViewerSettings = {
   /**
-   * If `true`, the EvaluationViewer should aggressively attempt to replace
-   * valid Script Numbers on the stack with their numerical representation.
+   * The EvaluationViewer will aggressively attempt to replace valid Script
+   * Numbers on the stack with the chosen representation.
    */
-  scriptNumbersDisplayFormat: 'hex' | 'integer' | 'binary';
+  vmNumbersDisplayFormat: 'hex' | 'integer' | 'binary' | 'bigint';
+  supportBigInt: boolean;
   /**
    * If `true`, the EvaluationViewer should show the AlternativeStack rather
    * than the normal stack.
@@ -469,4 +472,29 @@ export type EvaluationViewerSettings = {
    * follow the origin of specific byte sequences).
    */
   identifyStackItems: boolean;
+
+  /**
+   * An array of numbers indicating the iteration index to display of each
+   * loop rendered in the EvaluationViewer. Each array item corresponds to a
+   * visible loop in source order.
+   *
+   * Note that this setting is global: when switching between active scripts,
+   * the editor attempts to continue displaying the same iteration index as a
+   * convenience; this is often useful when reviewing different code paths of
+   * the same contract or when switching rapidly between contracts.
+   *
+   * By design, if any index of the current `loopViewingIndexes` is set to an
+   * index which is not valid in the current evaluation, the viewer will
+   * automatically display iteration `0` of that particular loop without
+   * modifying `loopViewingIndexes`, retaining the user's configured
+   * loop-viewing state until the user manually changes the respective loop
+   * viewing index. This allows the viewer to maintain the users configured
+   * state through program changes which shorten and then revert the number of
+   * iterations performed by a particular loop.
+   *
+   * Note also that tested scripts therefore share loop viewing indexes between
+   * the tested script and script test (a useful feature, as the tested script
+   * will often iterate in the same way as the tested script).
+   */
+  loopViewingIndexes: number[];
 };

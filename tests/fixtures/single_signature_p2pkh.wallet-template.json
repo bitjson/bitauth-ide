@@ -28,6 +28,15 @@
       "script": "OP_DUP\nOP_HASH160 <$(<key.public_key> OP_HASH160\n)> OP_EQUALVERIFY\nOP_CHECKSIG"
     }
   },
-  "supported": ["BCH_2020_05", "BCH_2021_05", "BCH_2022_05"],
+  "supported": [
+    "BCH_2020_05",
+    "BCH_2021_05",
+    "BCH_2022_05",
+    "BCH_2023_05",
+    "BCH_2024_05",
+    "BCH_2025_05",
+    "BCH_2026_05",
+    "BCH_SPEC"
+  ],
   "version": 0
 }

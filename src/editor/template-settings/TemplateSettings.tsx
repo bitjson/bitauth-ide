@@ -20,8 +20,24 @@ const availableVms: { [key in IDESupportedVM]: React.ReactNode } = {
     <span className="vm">
       <code>BCH_2023_05</code>
       <span className="chain">Bitcoin Cash</span>
-      <span className="version">2022 May Upgrade</span>
+      <span className="version">2023 May Upgrade</span>
       <span className="tag live">live</span>
+    </span>
+  ),
+  BCH_2025_05: (
+    <span className="vm">
+      <code>BCH_2025_05</code>
+      <span className="chain">Bitcoin Cash</span>
+      <span className="version">2025 May Upgrade</span>
+      <span className="tag spec">Spec</span>
+    </span>
+  ),
+  BCH_2026_05: (
+    <span className="vm">
+      <code>BCH_2026_05</code>
+      <span className="chain">Bitcoin Cash</span>
+      <span className="version">2026 May Upgrade</span>
+      <span className="tag spec">Spec</span>
     </span>
   ),
   BCH_SPEC: (

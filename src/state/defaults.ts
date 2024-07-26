@@ -15,7 +15,7 @@ export const emptyTemplate: WalletTemplate = {
   name: 'Untitled',
   entities: {},
   scripts: {},
-  supported: ['BCH_2023_05'] as IDESupportedVM[],
+  supported: ['BCH_2023_05', 'BCH_SPEC'] as IDESupportedVM[],
   version: 0 as const,
 };
 
@@ -38,10 +38,12 @@ export const defaultState: AppState = {
   evaluationViewerSettings: {
     abbreviateLongStackItems: true,
     groupStackItemsDeeperThan: 3,
-    scriptNumbersDisplayFormat: 'integer',
+    supportBigInt: false,
+    vmNumbersDisplayFormat: 'integer',
     reverseStack: false,
     showAlternateStack: false,
     identifyStackItems: true,
+    loopViewingIndexes: [],
   },
   activeDialog: ActiveDialog.none,
   templateLoadTime: undefined,

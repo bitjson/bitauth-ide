@@ -1,6 +1,6 @@
 import {
   BuiltInVariables,
-  CompilerOperationsKeyBCH,
+  CompilerOperationsKeyBch,
   CompilerOperationsSigningSerializationComponent,
   CompilerOperationsSigningSerializationFull,
   OpcodeDescriptionsBCH,
@@ -28,7 +28,6 @@ const disabledOpcodes = [
   'OP_RESERVED2',
   'OP_2MUL',
   'OP_2DIV',
-  'OP_MUL',
   'OP_LSHIFT',
   'OP_RSHIFT',
 ];
@@ -237,8 +236,8 @@ export const opcodeCompletionItemProviderBCH: Monaco.languages.CompletionItemPro
   };
 
 export const getKeyOperationDescriptions = (parameter?: string) => {
-  const map: { [op in CompilerOperationsKeyBCH]: [string, string] } = {
-    data_signature: [
+  const map: { [op in CompilerOperationsKeyBch]: [string, string] } = {
+    ecdsa_data_signature: [
       'Data Signature (ECDSA)',
       `An ECDSA signature covering the sha256 hash of the compiled bytecode ${
         parameter ? `from script ID "${parameter}"` : 'of another script'
@@ -262,7 +261,7 @@ export const getKeyOperationDescriptions = (parameter?: string) => {
           : ''
       }.`,
     ],
-    signature: [
+    ecdsa_signature: [
       'Signature (ECDSA)',
       `An ECDSA signature covering the double sha256 hash of the serialized transaction${
         parameter
@@ -338,12 +337,14 @@ export const signatureOperationParameterDescriptions: {
   ],
 };
 
-const keyOperationPartsToDetails = (operation: string, parameter: string) => {
+const keyOperationPartsToDetails = (
+  operation: string,
+  parameter: string,
+): [string, string] => {
   return (
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    getKeyOperationDescriptions(parameter)[
-      operation as CompilerOperationsKeyBCH
-    ] || [
+    (getKeyOperationDescriptions(parameter)[operation] as
+      | [string, string]
+      | undefined) ?? [
       'Unknown Operation',
       `The compiler knows about the "${operation}${
         parameter ? `.${parameter}` : ''

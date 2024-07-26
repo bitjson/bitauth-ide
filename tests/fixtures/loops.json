@@ -1,0 +1,14 @@
+{
+  "$schema": "https://ide.bitauth.com/authentication-template-v0.schema.json",
+  "description": "Render loops and loop controls in the evaluation viewer.\n",
+  "name": "loops.json",
+  "entities": {},
+  "scripts": {
+    "nested_loops": {
+      "name": "Nested Loops",
+      "script": "\n<0> <0>\nOP_BEGIN\n\n  <1> OP_IF  \n    <0> OP_BEGIN OP_1ADD OP_DUP <2> OP_EQUAL OP_UNTIL\n    <1> <1> OP_BEGIN \n    OP_UNTIL OP_BEGIN\n    OP_UNTIL\n  OP_ENDIF\n  OP_ADD\n  OP_SWAP OP_1ADD OP_SWAP\n  OP_OVER\n  <1> OP_IF \n    <0> OP_BEGIN OP_BEGIN\n      OP_1ADD\n      OP_DUP\n      <$(\n         <0> OP_BEGIN \n         OP_1ADD \n         OP_DUP <5>\n         OP_EQUAL\n         OP_UNTIL\n       )>\n      OP_EQUAL\n    OP_UNTIL <1> OP_UNTIL\n  OP_ENDIF\n  OP_EQUAL\nOP_UNTIL\nOP_NIP\n"
+    }
+  },
+  "supported": ["BCH_SPEC"],
+  "version": 0
+}

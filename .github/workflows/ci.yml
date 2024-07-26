@@ -41,7 +41,7 @@ jobs:
     needs: [lint]
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.41.0-jammy
+      image: mcr.microsoft.com/playwright:v1.45.0-jammy
     strategy:
       fail-fast: false
       matrix:
@@ -135,7 +135,11 @@ jobs:
         run: yarn cov:lcov
       - name: Send coverage to Codecov
         if: always()
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
 
   merge-reports:
     # Merge reports after playwright-tests, even if some shards have failed

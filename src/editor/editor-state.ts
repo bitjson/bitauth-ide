@@ -25,8 +25,8 @@ import {
   CompilationResultResolveError,
   CompilationResultSuccess,
   createCompiler,
-  createVirtualMachineBCH2023,
-  createVirtualMachineBCHCHIPs,
+  createVirtualMachineBch2023,
+  createVirtualMachineBchSpec,
   encodeDataPush,
   EvaluationSample,
   extractBytecodeResolutions,
@@ -105,8 +105,8 @@ export const computeEditorState = <
   const configuration = walletTemplateToCompilerConfiguration(template);
   const vm =
     state.currentVmId === 'BCH_2023_05'
-      ? createVirtualMachineBCH2023()
-      : createVirtualMachineBCHCHIPs();
+      ? createVirtualMachineBch2023()
+      : createVirtualMachineBchSpec();
   const compiler = createCompiler(configuration);
 
   /**
@@ -428,7 +428,11 @@ export const computeEditorState = <
       remainingStates = unmatchedStates;
       frameSamples = samples;
       const linesNeeded = lastSourceLine + 2;
-      evaluationLines = samplesToEvaluationLines(samples, linesNeeded);
+      evaluationLines = samplesToEvaluationLines(
+        samples,
+        linesNeeded,
+        state.evaluationViewerSettings.loopViewingIndexes,
+      );
     }
 
     const scriptName =

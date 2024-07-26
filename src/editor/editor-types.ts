@@ -110,12 +110,34 @@ export enum EvaluationViewerSpacer {
    */
   executedConditional = 'executedConditional',
   /**
+   * Spacer applied to intermediate lines ending inside a loop.
+   *
+   * Note that the first line of each loop is instead marked by
+   * a {@link EvaluationViewerBeginLoop}.
+   */
+  loop = 'loop',
+  /**
    * Spacer applied to lines ending inside an OP_IF/OP_NOTIF... OP_ENDIF block
    * where the last instruction was skipped, i.e. the top element of
    * `executionStack` is `false`.
    */
   skippedConditional = 'skippedConditional',
 }
+
+export type EvaluationViewerBeginLoop = {
+  /**
+   * The index of this loop in the script source.
+   */
+  loopIndex: number;
+  /**
+   * The iteration index of this loop currently being displayed.
+   */
+  iterationIndex: number;
+  /**
+   * The maximum iteration index for this loop in the current evaluation.
+   */
+  maximumIterationIndex: number;
+};
 
 /**
  * TODO: highlights (and descriptions) for the other failure scenarios
@@ -135,7 +157,7 @@ export type EvaluationViewerLine<
   ProgramState extends IDESupportedProgramState = IDESupportedProgramState,
 > = {
   state?: ProgramState;
-  spacers?: EvaluationViewerSpacer[];
+  spacers?: (EvaluationViewerSpacer | EvaluationViewerBeginLoop)[];
   highlight?: EvaluationViewerHighlight;
 };
 

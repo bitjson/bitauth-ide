@@ -73,3 +73,19 @@ test('ignores misleading unicode characters, shows compilation on hover', async 
   await expect(page.getByText('Compiled: 0x03666974')).toBeVisible();
   await expect(page).toHaveScreenshot();
 });
+
+test('renders loops as expected', async ({ page }) => {
+  await loadTemplate(page, 'tests/fixtures/loops.json');
+  await page.getByRole('button', { name: 'Nested Loops', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Nested Loops P2SH', exact: true }),
+  ).toBeVisible();
+  await expect(page).toHaveScreenshot();
+  await page.locator('.loop-start').first().hover();
+  await page.locator('.loop-start').first().click();
+  await page.locator('.bp5-slider-label').nth(1).click();
+  await expect(page).toHaveScreenshot();
+  await page.locator('.loop-start').nth(2).hover();
+  await page.locator('.loop-start').nth(2).click();
+  await expect(page).toHaveScreenshot();
+});

@@ -3,7 +3,10 @@ import { abbreviateStackItem } from '../common';
 import { ScriptEditorFrame } from '../editor-types';
 
 import {
-  AuthenticationErrorBCH2022,
+  AuthenticationErrorBch2023Additions,
+  AuthenticationErrorBch2025Additions,
+  AuthenticationErrorBchSpec,
+  AuthenticationErrorBchSpecAdditions,
   AuthenticationErrorCommon,
   binToHex,
 } from '@bitauth/libauth';
@@ -11,19 +14,23 @@ import { Popover } from '@blueprintjs/core';
 
 export type PossibleErrors =
   | AuthenticationErrorCommon
-  | AuthenticationErrorBCH2022;
+  | AuthenticationErrorBch2023Additions
+  | AuthenticationErrorBch2025Additions
+  | AuthenticationErrorBchSpecAdditions;
 
 /**
  * This predates Libauth v2, where VM error messages can include contextual
  * information. It would probably be better to improve those messages instead of
  * expanding this.
+ *
+ * TODO: update for new Libauth error match strategy (`error.includes(type)`)
  */
 export const vmErrorAssistanceBCH: {
   [error in PossibleErrors]?: (
     state: IDESupportedProgramState,
   ) => string | JSX.Element;
 } = {
-  [AuthenticationErrorCommon.unsatisfiedLocktime]: (state) => (
+  [AuthenticationErrorBchSpec.unsatisfiedLocktime]: (state) => (
     <span>
       This error occurs when the transaction&apos;s locktime has not reached the
       locktime required by this operation. In this scenario, the
@@ -31,7 +38,7 @@ export const vmErrorAssistanceBCH: {
       <code>{state.program.transaction.locktime}</code>.
     </span>
   ),
-  [AuthenticationErrorCommon.nonNullSignatureFailure]: (state) => {
+  [AuthenticationErrorBchSpec.nonNullSignatureFailure]: (state) => {
     return (
       <div className="help-popover-scroll">
         <p>
