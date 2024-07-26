@@ -17,7 +17,6 @@ import {
 import {
   compilationErrorAssistance,
   renderSimpleMarkdown,
-  vmErrorAssistanceBCH,
 } from '../script-editor/error-assistance';
 
 import * as libauth from '@bitauth/libauth';
@@ -146,10 +145,9 @@ const getStackItemDisplaySettings = (
   return { hex, type: 'hex' as const, label: hex };
 };
 
-const hasVmHelp = (
-  error?: string,
-): error is keyof typeof vmErrorAssistanceBCH =>
-  error !== undefined && vmErrorAssistanceBCH[error] !== undefined;
+// TODO: modernize
+const hasVmHelp = (_error?: string) => false;
+// error !== undefined && vmErrorAssistanceBCH[error] !== undefined;
 
 /**
  * Renders some common virtual machine errors with friendly help information.
@@ -158,7 +156,7 @@ const VmErrorLine = ({ state }: { state: IDESupportedProgramState }) =>
   hasVmHelp(state.error) ? (
     <span className="stack-item error error-with-help">
       <Popover
-        content={vmErrorAssistanceBCH[state.error]?.(state)}
+        // content={vmErrorAssistanceBCH[state.error]?.(state)}
         portalClassName="help-popover"
         interactionKind="hover"
       >
