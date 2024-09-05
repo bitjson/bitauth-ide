@@ -5,7 +5,7 @@ import { ActiveDialog } from '../../../state/types';
 import { createInsecureUuidV4 } from '../../../utils';
 import { toConventionalId } from '../../common';
 
-import { disassembleBytecodeBCH, hexToBin } from '@bitauth/libauth';
+import { disassembleBytecodeBch, hexToBin } from '@bitauth/libauth';
 import {
   Button,
   Classes,
@@ -16,7 +16,7 @@ import {
 import { WarningSign } from '@blueprintjs/icons';
 import React, { useState } from 'react';
 
-const disassembleHex = (hex: string) => disassembleBytecodeBCH(hexToBin(hex));
+const disassembleHex = (hex: string) => disassembleBytecodeBch(hexToBin(hex));
 const tokenizeHex = (hex: string) => {
   const splitAtErrors = disassembleHex(hex).split('[');
   return [
@@ -151,7 +151,10 @@ export const ImportScriptDialog = ({
                   id: scriptId,
                   internalId: createInsecureUuidV4(),
                   type: 'isolated',
-                  contents: disassembleHex(bytecode).split('[')[0],
+                  contents: disassembleHex(bytecode)
+                    .split('[')[0]!
+                    .split(' ')
+                    .join('\n'),
                 });
                 closeDialog();
               }
