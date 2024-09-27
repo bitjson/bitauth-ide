@@ -3,6 +3,8 @@ import { MonacoMarkerDataRequired } from '../../cash-assembly/editor-tooling';
 import { ActionCreators } from '../../state/reducer';
 import {
   IDESupportedProgramState,
+  LockingType,
+  lockingTypeDescriptions,
   ScriptDetails,
   VariableDetails,
 } from '../../state/types';
@@ -202,7 +204,7 @@ const updateMarkers =
 
 export const ScriptEditor = (props: {
   frame: ScriptEditorFrame<IDESupportedProgramState>;
-  isP2SH: boolean;
+  lockingType: LockingType;
   isPushed: boolean;
   scriptDetails: ScriptDetails;
   variableDetails: VariableDetails;
@@ -803,12 +805,26 @@ export const ScriptEditor = (props: {
         {name}
         {scriptType === 'test-setup' && <span>&nbsp;(Setup)</span>}
         {scriptType === 'test-check' && <span>&nbsp;(Check)</span>}
-        {props.isP2SH && (
+        {props.lockingType === 'p2sh20' ? (
           <span
-            className="script-tag p2sh-tag"
-            title="This is a P2SH script. The P2SH boilerplate is automatically included during compilation."
+            className="script-tag locking-type-tag"
+            title={lockingTypeDescriptions.p2sh20}
           >
-            P2SH
+            P2SH20
+          </span>
+        ) : props.lockingType === 'p2sh32' ? (
+          <span
+            className="script-tag locking-type-tag"
+            title={lockingTypeDescriptions.p2sh32}
+          >
+            P2SH32
+          </span>
+        ) : (
+          <span
+            className="script-tag locking-type-tag"
+            title={lockingTypeDescriptions.standard}
+          >
+            bare
           </span>
         )}
         {props.isPushed && scriptType === 'tested' && (
@@ -870,7 +886,7 @@ export const ScriptEditor = (props: {
         id={id}
         name={name}
         scriptType={scriptType}
-        isP2SH={props.isP2SH}
+        lockingType={props.lockingType}
         isPushed={props.isPushed}
         closeDialog={() => {
           setEditScriptDialogIsOpen(false);

@@ -47,16 +47,15 @@
 
   .script-tag {
     font-size: 0.7em;
-    background-color: #2e7105;
     border-radius: 3px;
     display: inline-block;
     padding: 0.1em 0.5em;
     margin-left: 1em;
   }
 
-  .p2sh-tag {
+  .locking-type-tag {
     text-transform: uppercase;
-    background-color: #2e7105;
+    background-color: var(--editor-background-color);
   }
 
   .pushed-tag {

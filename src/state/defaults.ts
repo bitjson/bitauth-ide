@@ -15,7 +15,12 @@ export const emptyTemplate: WalletTemplate = {
   name: 'Untitled',
   entities: {},
   scripts: {},
-  supported: ['BCH_2023_05', 'BCH_SPEC'] as IDESupportedVM[],
+  supported: [
+    'BCH_2023_05',
+    'BCH_2025_05',
+    'BCH_2026_05',
+    'BCH_SPEC',
+  ] as IDESupportedVM[],
   version: 0 as const,
 };
 

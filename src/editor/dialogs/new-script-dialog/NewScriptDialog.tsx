@@ -4,7 +4,8 @@ import {
   ActiveDialog,
   BaseScriptType,
   CurrentScripts,
-  ScriptType,
+  scriptTypes,
+  typeDescriptions,
 } from '../../../state/types';
 import { createInsecureUuidV4 } from '../../../utils';
 import { toConventionalId } from '../../common';
@@ -19,28 +20,6 @@ import {
 } from '@blueprintjs/core';
 import { WarningSign } from '@blueprintjs/icons';
 import React, { useState } from 'react';
-
-const scriptTypes: { label: string; value: ScriptType }[] = [
-  { label: 'Locking Script', value: 'locking' },
-  { label: 'Unlocking Script', value: 'unlocking' },
-  { label: 'Isolated Script', value: 'isolated' },
-  { label: 'Script Test', value: 'test-setup' },
-];
-
-const typeDescriptions: { [key in ScriptType]: string } = {
-  locking:
-    'Locking scripts hold funds. A locking script is the “challenge” which must be unlocked to spend a transaction output. An “Address” is simply an abstraction for a specific locking script.',
-  unlocking:
-    'An unlocking script spends from a locking script. To create a transaction, the spender must provide a valid unlocking script for each input being spent. (A locking script can be unlocked by multiple unlocking scripts.)',
-  isolated:
-    'An isolated script is useful for constructions like checksums or re-usable utility scripts (which can be used inside other scripts). Isolated scripts can have script tests, e.g. utility scripts can be tested to ensure they perform a series of operations properly.',
-  'test-setup':
-    'A script test is applied to an isolated script. Each script test has a “setup” phase which is evaluated before the tested script, and a “check” phase which is evaluated after. The test passes if the “check” script leaves a single Script Number 1 on the stack.',
-  tested:
-    'Something is broken: tested scripts should be created by assigning a test-setup script to an isolated script.',
-  'test-check':
-    'Something is broken: script tests should use the `test-setup` type in this dialog.',
-};
 
 const hasParent = (scriptType: BaseScriptType) =>
   scriptType === 'unlocking' || scriptType === 'test-setup';

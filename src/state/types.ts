@@ -115,6 +115,47 @@ export type ScenarioDetails = {
 
 export type ScriptType = BaseScriptType | 'tested' | 'test-check';
 
+export const scriptTypes: { label: string; value: ScriptType }[] = [
+  { label: 'Locking Script', value: 'locking' },
+  { label: 'Unlocking Script', value: 'unlocking' },
+  { label: 'Isolated Script', value: 'isolated' },
+  { label: 'Script Test', value: 'test-setup' },
+];
+
+export const typeDescriptions: { [key in ScriptType]: string } = {
+  locking:
+    'Locking scripts hold funds. A locking script is the “challenge” which must be unlocked to spend a transaction output. An “Address” is simply an abstraction for a specific locking script.',
+  unlocking:
+    'An unlocking script spends from a locking script. To create a transaction, the spender must provide a valid unlocking script for each input being spent. (A locking script can be unlocked by multiple unlocking scripts.)',
+  isolated:
+    'An isolated script is useful for constructions like checksums or re-usable utility scripts (which can be used inside other scripts). Isolated scripts can have script tests, e.g. utility scripts can be tested to ensure they perform a series of operations properly.',
+  'test-setup':
+    'A script test is applied to an isolated script. Each script test has a “setup” phase which is evaluated before the tested script, and a “check” phase which is evaluated after. The test passes if the “check” script leaves a single Script Number 1 on the stack.',
+  tested:
+    'Something is broken: tested scripts should be created by assigning a test-setup script to an isolated script.',
+  'test-check':
+    'Something is broken: script tests should use the `test-setup` type in this dialog.',
+};
+
+export type LockingType = WalletTemplateScriptLocking['lockingType'];
+
+export const lockingTypes: { label: string; value: LockingType }[] = [
+  { label: 'P2SH20', value: 'p2sh20' },
+  { label: 'P2SH32', value: 'p2sh32' },
+  { label: 'Bare (non-P2SH)', value: 'standard' },
+];
+
+export const lockingTypeDescriptions: {
+  [key in LockingType]: string;
+} = {
+  p2sh20:
+    'This is a P2SH20 script: P2SH20-wrapping bytecode is automatically included during compilation.',
+  p2sh32:
+    'This is a P2SH32 script. The P2SH32-wrapping bytecode is automatically included during compilation.',
+  standard:
+    'This is a bare (non-P2SH) script: it is compiled directly into the transaction output without P2SH-wrapping bytecode.',
+};
+
 export type BaseScriptType =
   | 'locking'
   | 'unlocking'

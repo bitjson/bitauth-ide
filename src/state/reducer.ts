@@ -527,7 +527,7 @@ class App extends ImmerReducer<AppState> {
     ) {
       this.draftState.currentVmId = firstSupportedVm;
       this.draftState.evaluationViewerSettings.supportBigInt =
-        firstSupportedVm === 'BCH_SPEC';
+        firstSupportedVm !== 'BCH_2023_05';
     }
     this.draftState.templateLoadTime = new Date();
     this.draftState.currentTemplate = template;
@@ -559,7 +559,8 @@ class App extends ImmerReducer<AppState> {
   }
   activateVm(vm: IDESupportedVM) {
     this.draftState.currentVmId = vm;
-    this.draftState.evaluationViewerSettings.supportBigInt = vm === 'BCH_SPEC';
+    this.draftState.evaluationViewerSettings.supportBigInt =
+      vm !== 'BCH_2023_05';
   }
 }
 

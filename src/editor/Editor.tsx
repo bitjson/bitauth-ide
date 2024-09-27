@@ -190,7 +190,7 @@ export const Editor = connect(
       deleteScript={props.deleteScript}
       editScript={props.editScript}
       frame={computed.scriptEditorFrames[indexFromTop]!}
-      isP2SH={computed.lockingType === 'p2sh20'}
+      lockingType={computed.lockingType}
       isPushed={computed.isPushed}
       scriptDetails={computed.scriptDetails}
       setCursorLine={setCursorLine[indexFromTop]!}

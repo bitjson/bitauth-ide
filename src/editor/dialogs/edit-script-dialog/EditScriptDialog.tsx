@@ -1,6 +1,11 @@
 import '../editor-dialog.css';
 import { ActionCreators } from '../../../state/reducer';
-import { ScriptType } from '../../../state/types';
+import {
+  LockingType,
+  lockingTypeDescriptions,
+  lockingTypes,
+  ScriptType,
+} from '../../../state/types';
 import { toConventionalId } from '../../common';
 
 import {
@@ -9,6 +14,7 @@ import {
   Classes,
   Dialog,
   FormGroup,
+  HTMLSelect,
   InputGroup,
   Intent,
   Switch,
@@ -21,7 +27,7 @@ export const EditScriptDialog = ({
   name,
   internalId,
   id,
-  isP2SH,
+  lockingType,
   isPushed,
   isOpen,
   closeDialog,
@@ -33,8 +39,8 @@ export const EditScriptDialog = ({
   name: string;
   internalId: string;
   id: string;
-  isP2SH?: boolean;
-  isPushed?: boolean;
+  lockingType: LockingType;
+  isPushed: boolean;
   usedIds: string[];
   editScript: typeof ActionCreators.editScript;
   deleteScript: typeof ActionCreators.deleteScript;
@@ -43,7 +49,7 @@ export const EditScriptDialog = ({
 }) => {
   const [scriptName, setScriptName] = useState(name);
   const [scriptId, setScriptId] = useState(id);
-  const [scriptIsP2SH, setScriptIsP2SH] = useState(isP2SH);
+  const [scriptLockingType, setScriptLockingType] = useState(lockingType);
   const [scriptIsPushed, setScriptIsPushed] = useState(isPushed);
   const [nonUniqueId, setNonUniqueId] = useState('');
   const [promptDelete, setPromptDelete] = useState(false);
@@ -55,7 +61,7 @@ export const EditScriptDialog = ({
       onOpening={() => {
         setScriptName(name);
         setScriptId(id);
-        setScriptIsP2SH(isP2SH);
+        setScriptLockingType(lockingType);
         setNonUniqueId('');
       }}
       onClose={() => {
@@ -117,22 +123,16 @@ export const EditScriptDialog = ({
         )}
         {scriptType === 'locking' && (
           <FormGroup
-            helperText={
-              <span>
-                If enabled, this script will be nested in the standard P2SH
-                template.
-              </span>
-            }
+            helperText={lockingTypeDescriptions[scriptLockingType]}
             label="Script Mode"
             labelFor="script-p2sh"
             inline={true}
           >
-            <Switch
-              checked={scriptIsP2SH}
+            <HTMLSelect
               id="script-p2sh"
-              label="Enable P2SH"
-              onChange={() => {
-                setScriptIsP2SH(!scriptIsP2SH);
+              options={lockingTypes}
+              onChange={(e) => {
+                setScriptLockingType(e.currentTarget.value as LockingType);
               }}
             />
           </FormGroup>
@@ -212,7 +212,7 @@ export const EditScriptDialog = ({
               scriptName === '' ||
               (scriptName === name &&
                 scriptId === id &&
-                scriptIsP2SH === isP2SH &&
+                scriptLockingType === lockingType &&
                 scriptIsPushed === isPushed) ||
               (!isTest && scriptId === '')
             }
@@ -224,7 +224,7 @@ export const EditScriptDialog = ({
                   internalId,
                   name: scriptName,
                   id: scriptId,
-                  lockingType: scriptIsP2SH ? 'p2sh20' : 'standard',
+                  lockingType: scriptLockingType,
                   isPushed: scriptIsPushed,
                 });
                 closeDialog();

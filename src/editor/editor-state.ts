@@ -26,6 +26,8 @@ import {
   CompilationResultSuccess,
   createCompiler,
   createVirtualMachineBch2023,
+  createVirtualMachineBch2025,
+  createVirtualMachineBch2026,
   createVirtualMachineBchSpec,
   encodeDataPush,
   EvaluationSample,
@@ -106,7 +108,11 @@ export const computeEditorState = <
   const vm =
     state.currentVmId === 'BCH_2023_05'
       ? createVirtualMachineBch2023()
-      : createVirtualMachineBchSpec();
+      : state.currentVmId === 'BCH_2025_05'
+        ? createVirtualMachineBch2025()
+        : state.currentVmId === 'BCH_2026_05'
+          ? createVirtualMachineBch2026()
+          : createVirtualMachineBchSpec();
   const compiler = createCompiler(configuration);
 
   /**

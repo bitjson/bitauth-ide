@@ -104,6 +104,17 @@ const stackItem = (
   </Popover>
 );
 
+const elideAt = 200;
+const splitAt = 100;
+const elideDigits = (digits: string) =>
+  digits.length < elideAt
+    ? digits
+    : `${digits.slice(0, splitAt)} \u2026 (${digits.length - elideAt} total digits) \u2026 ${digits.slice(-splitAt)}`;
+const elideHex = (characters: string) =>
+  characters.length < elideAt
+    ? characters
+    : `${characters.slice(0, splitAt)} \u2026 (${(characters.length - 2) / 2} total bytes) \u2026 ${characters.slice(-splitAt)}`;
+
 const getStackItemDisplaySettings = (
   item: Uint8Array,
   settings: EvaluationViewerSettings,
@@ -122,7 +133,7 @@ const getStackItemDisplaySettings = (
   const number = vmNumberToBigInt(item, {
     maximumVmNumberByteLength:
       settings.vmNumbersDisplayFormat === 'bigint'
-        ? 258
+        ? 10_000
         : settings.supportBigInt
           ? 19
           : 8,
@@ -132,17 +143,17 @@ const getStackItemDisplaySettings = (
       settings.vmNumbersDisplayFormat === 'integer' ||
       settings.vmNumbersDisplayFormat === 'bigint'
     ) {
-      return { hex, type: 'number' as const, label: `${number}` };
+      return { hex, type: 'number' as const, label: elideDigits(`${number}`) };
     }
     if (settings.vmNumbersDisplayFormat === 'binary') {
       return {
         hex,
         type: 'binary' as const,
-        label: `0b${binToBinString(item)}`,
+        label: elideDigits(`0b${binToBinString(item)}`),
       };
     }
   }
-  return { hex, type: 'hex' as const, label: hex };
+  return { hex, type: 'hex' as const, label: elideHex(hex) };
 };
 
 // TODO: modernize
@@ -378,7 +389,7 @@ const EvaluationLine = ({
           );
           return stackItem(
             itemIndex,
-            hex,
+            elideHex(hex),
             <span className={`stack-item ${type}`}>
               {settings.abbreviateLongStackItems
                 ? abbreviateStackItem(label)
@@ -654,7 +665,7 @@ export const ViewerControls = ({
         </Tooltip>
       ) : evaluationViewerSettings.vmNumbersDisplayFormat === 'bigint' ? (
         <Tooltip
-          content="Showing VM Numbers in integer format (up to 258 bytes)"
+          content="Showing VM Numbers in integer format (up to maximum length)"
           portalClassName="control-tooltip"
           position="bottom-right"
         >
