@@ -1,5 +1,5 @@
 {
-  "$schema": "https://ide.bitauth.com/authentication-template-v0.schema.json",
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
   "description": "Render the error for a non-push opcode located in unlocking bytecode.\n",
   "name": "non-push-unlocking-opcode.json",
   "entities": {},
@@ -15,6 +15,5 @@
       "script": "OP_ADD\n"
     }
   },
-  "supported": ["BCH_2023_05"],
-  "version": 0
+  "supported": ["BCH_2023_05", "BCH_2025_05"]
 }

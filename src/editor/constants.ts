@@ -1,7 +1,7 @@
 export const ideURI = window.location.origin;
 
 export const bitauthWalletTemplateSchema =
-  'https://ide.bitauth.com/authentication-template-v0.schema.json';
+  'https://libauth.org/schemas/wallet-template-v0.schema.json';
 
 export const localStorageBackupPrefix = 'BITAUTH_IDE_BACKUP_';
 

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://ide.bitauth.com/authentication-template-v0.schema.json",
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
   "description": "This contract demonstrates a simple Merkle tree leaf replacement within a covenant. Leaves can be used to maintain any kind of state that a covenant must manage internally like sealed ballots (e.g. shareholder votes), deposit receipts (e.g. for issuing refunds), an order book, etc.\n\nThis demonstration uses a 3-level Merkle tree for which each leaf has been initialized to OP_0:\n \n                    rt\n                 /      \\\n             z0           z1\n            /  \\         /  \\\n          y0    y1     y2    y3\n          /\\    /\\     /\\     /\\\n        x0 x1  x2 x3  x4 x5  x6 x7\n        |  |   |  |   |  |   |  |\n        a0 a1  a2 a3  a4 a5  a6 a7\n\nIn this demo, both \"before\" and \"after\" Merkle trees are simultaneously built/validated for each tree level, optimizing contract size.\n\nYou can explore scripts on the left sidebar:\n\n- See the \"Replace Empty Leaf\" script for a full demo.\n- See the \"Left Sibling\" and \"Right Sibling\" scripts for unit tests of a single tree level.\n\nNote: Merkle trees are typically less efficient for state management than token commitments. Before choosing a Merkle tree, verify that the intended use case cannot be served by placing state in token commitments issued either to certain participants or to covenants designed for this purpose.",
   "name": "Experimenting with Contract State Merkle Trees",
   "entities": {},
@@ -103,6 +103,5 @@
       }
     }
   },
-  "supported": ["BCH_2022_05"],
-  "version": 0
+  "supported": ["BCH_2022_05"]
 }

@@ -130,6 +130,7 @@ export const EditScriptDialog = ({
           >
             <HTMLSelect
               id="script-p2sh"
+              value={scriptLockingType}
               options={lockingTypes}
               onChange={(e) => {
                 setScriptLockingType(e.currentTarget.value as LockingType);

@@ -2,16 +2,40 @@
   "$ref": "#/definitions/WalletTemplate",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
+    "AuthenticationVirtualMachineIdentifier": {
+      "description": "Allowable identifiers for authentication virtual machine versions. The `BCH` prefix identifies the Bitcoin Cash network, the `XEC` prefix identifies the eCash network, the `BSV` prefix identifies the Bitcoin SV network, and the `BTC` prefix identifies the Bitcoin Core network. VM versions are named according to the date they were deployed on the indicated network.\n\nFor each network prefix, a `_SPEC` VM version is reserved to indicate that the template requires a custom, not-yet-deployed VM version (e.g. one or more CHIPs). By convention, templates marked for `_SPEC` VMs should indicate their requirements in the template description. After deployment of the `_SPEC` VM, when template compatibility is verified, the template's `supported` array should be updated to indicate compatibility with the live VM version.",
+      "enum": [
+        "BCH_2020_05",
+        "BCH_2021_05",
+        "BCH_2022_05",
+        "BCH_2023_05",
+        "BCH_2024_05",
+        "BCH_2025_05",
+        "BCH_2026_05",
+        "BCH_2027_05",
+        "BCH_2028_05",
+        "BCH_2029_05",
+        "BCH_2030_05",
+        "BCH_SPEC",
+        "BSV_2020_02",
+        "BSV_SPEC",
+        "BTC_2017_08",
+        "BTC_SPEC",
+        "XEC_2020_05",
+        "XEC_SPEC"
+      ],
+      "type": "string"
+    },
     "WalletTemplate": {
       "additionalProperties": false,
-      "description": "A `WalletTemplate` (A.K.A. `CashAssembly Template`) specifies a set of locking scripts, unlocking scripts, and other information required to use a certain authentication scheme. Templates fully describe wallets and protocols in a way that can be shared between software clients.",
+      "description": "A `WalletTemplate` specifies a set of locking scripts, unlocking scripts, and other information required to use a certain wallet protocol. Templates fully describe wallet protocols in a way that can be shared between software clients.",
       "properties": {
         "$schema": {
-          "description": "The URI that identifies the JSON Schema used by this template. Try: `https://libauth.org/schemas/authentication-template-v0.schema.json` to enable documentation, autocompletion, and validation in JSON documents.",
+          "description": "The URI that identifies the JSON Schema used by this template. Try: `https://libauth.org/schemas/wallet-template-v0.schema.json` to enable documentation, autocompletion, and validation in JSON documents.",
           "type": "string"
         },
         "description": {
-          "description": "An optionally multi-line, free-form, human-readable description for this wallet template (for use in user interfaces). If displayed, this description should use a monospace font to properly render ASCII diagrams.",
+          "description": "An optionally multi-line, free-form, human-readable description for this wallet template (for use in user interfaces). If displayed, this description should use a monospace font to properly render ASCII diagrams.\n\nDescriptions have no length limit, but in user interfaces with limited space, they should be hidden beyond the first newline character or `140` characters until revealed by the user (e.g. by hiding the remaining description until the user activates a \"show more\" link).",
           "type": "string"
         },
         "entities": {
@@ -22,7 +46,7 @@
           "type": "object"
         },
         "name": {
-          "description": "A single-line, Title Case, human-readable name for this wallet template (for use in user interfaces).",
+          "description": "A single-line, Title Case, human-readable name for this authentication template (for use in user interfaces).",
           "type": "string"
         },
         "scenarios": {
@@ -61,27 +85,27 @@
         },
         "version": {
           "const": 0,
-          "description": "A number identifying the format of this WalletTemplate. Currently, this implementation requires `version` be set to `0`.",
+          "deprecated": "template versions are now specified via `$schema`",
+          "description": "A number identifying the format of this WalletTemplate. Currently, this implementation allows `version` to be set to `0`.",
           "type": "number"
         }
       },
-      "required": ["entities", "scripts", "supported", "version"],
+      "required": ["entities", "scripts", "supported"],
       "type": "object"
     },
     "WalletTemplateAddressData": {
       "additionalProperties": false,
       "properties": {
         "description": {
-          "description": "A single-line, human readable description for this address data.",
+          "description": "A single-line, human readable description for this variable (for use in user interfaces).",
           "type": "string"
         },
         "name": {
-          "description": "A single-line, Title Case, human-readable name for this address data.",
+          "description": "A single-line, Title Case, human-readable name for this variable (for use in user interfaces).",
           "type": "string"
         },
         "type": {
           "const": "AddressData",
-          "description": "`AddressData` is the most low-level variable type. It must be collected and stored each time a script is generated (usually, a locking script). `AddressData` can include any type of data, and can be used in any way.\n\nFor more persistent data, use `WalletData`.",
           "type": "string"
         }
       },
@@ -121,32 +145,35 @@
       "additionalProperties": false,
       "properties": {
         "addressOffset": {
-          "description": "The offset by which to increment the `addressIndex` provided in the compilation data when deriving this `HdKey`. (Default: 0)\n\nThis is useful for deriving the \"next\" (`1`) or \"previous\" (`-1`) address to be used in the current compiler configuration.",
+          "description": "The offset by which to increment the `addressIndex` provided in the compilation data when deriving this `HdKey`. (Default: 0)\n\nThis is useful for deriving the \"next\" (`1`) or \"previous\" (`-1`) address for use in the current compilation.",
           "type": "number"
         },
         "description": {
-          "description": "A single-line, human readable description for this HD key.",
+          "description": "A single-line, human readable description for this variable (for use in user interfaces).",
           "type": "string"
         },
         "hdPublicKeyDerivationPath": {
-          "description": "The path to derive the entity's HD public key from the entity's master HD private key. By default, `m` (i.e. the entity's HD public key represents the same node in the HD tree as its HD private key).\n\nThis can be used to specify another derivation path from which the `publicDerivationPath` begins, e.g. `m/0'/1'/2'`. See `publicDerivationPath` for details.\n\nThis path must begin with an `m` (private derivation) and be fixed – it cannot contain an `i` character to represent the address index, as a dynamic hardened path would require a new HD public key for each address.",
+          "description": "The path to derive the entity's HD public key from the entity's provided HD private key. By default, an empty string (`\"\"`), i.e. the entity's HD public key represents the same node in the HD tree as the provided HD private key.\n\nThis can be used to specify another relative or absolute derivation path from which the `publicDerivationPath` begins, e.g. `m/0'/1'/2'`. See `publicDerivationPath` for details.\n\nThis path may optionally begin with an `m` (for relative private derivation) and must be fixed – it cannot contain any `i` characters to represent the address index, as a dynamic hardened path would require a new HD public key for each address.\n\nNote, `hdPublicKeyDerivationPath` could be automatically determined in some cases, but it's always defined independently to improve validation and auditability.",
           "type": "string"
         },
         "name": {
-          "description": "A single-line, Title Case, human-readable name for this HD key.",
+          "description": "A single-line, Title Case, human-readable name for this variable (for use in user interfaces).",
           "type": "string"
         },
+        "neverSignTwice": {
+          "description": "If set to `true`, indicates that this key should never be used to sign two different messages.\n\nThis is useful for contracts that use zero-confirmation escrow systems to guarantee against double-spend attempts. By indicating that the user could be subjected to losses if a key were used in multiple signatures, templates can ensure that wallet implementations apply appropriate safeguards around use of the key.\n\nDefaults to `false`.",
+          "type": "boolean"
+        },
         "privateDerivationPath": {
-          "description": "The derivation path used to derive this `HdKey` from the owning entity's HD private key. By default, `m/i`.\n\nThis path uses the notation specified in BIP32 and the `i` character to represent the location of the `addressIndex`:\n\nThe first character must be `m` (private derivation), followed by sets of `/` and a number representing the child index used in the derivation at that depth. Hardened derivation is represented by a trailing `'`, and hardened child indexes are represented with the hardened index offset (`2147483648`) subtracted. The `i` character is replaced with the value of `addressIndex` plus this `HdKey`'s `addressOffset`. If the `i` character is followed by `'`, the hardened index offset is added (`2147483648`) and hardened derivation is used.\n\nFor example, `m/0/1'/i'` uses 3 levels of derivation, with child indexes in the following order:\n\n`derive(derive(derive(node, 0), 2147483648 + 1), 2147483648 + addressIndex + addressOffset)`\n\nBecause hardened derivation requires knowledge of the private key, `HdKey` variables with `derivationPath`s that include hardened derivation cannot use HD public derivation (the `hdPublicKeys` property in `CompilationData`). Instead, compilation requires the respective HD private key (`CompilationData.hdKeys.hdPrivateKeys`) or the fully-derived public key (`CompilationData.hdKeys.derivedPublicKeys`).",
+          "description": "The relative or absolute derivation path used to derive this `HdKey` from the owning entity's HD private key. By default, `i`.\n\nIf the first character is `m`, the path is an absolute path, otherwise, the path is a relative path. For absolute paths, the compiler will verify that the relevant entity's HD private key is a master private key (encoded with a depth of zero); `HdKey`s with relative `privateDerivationPath` may be resolved using non-master private keys (e.g. hardened accounts that have been previously derived and delegated to a sub-entity prior to compilation).\n\nThis path uses the notation specified in BIP32 and the `i` character to represent the `addressIndex`:\n\nAn optional `m` character (indicating an absolute, private derivation path), followed by sets of `/` and a number representing the child index used in the derivation at that depth. Hardened derivation is represented by a trailing `'`, and hardened child indexes are represented with the hardened index offset (`2147483648`) subtracted. All `i` characters are replaced with the value of `addressIndex` plus this `HdKey`'s `addressOffset`. If the `i` character is followed by `'`, the hardened index offset is added (`2147483648`) and hardened derivation is used.\n\nFor example, `m/0/1'/i'` has 3 levels of derivation, with child indexes in the following order:\n\n`derive(derive(derive(masterKey, 0), 2147483648 + 1), 2147483648 + addressIndex + addressOffset)`\n\nAs the path is absolute (begins with `m`), the compiler will also verify that a zero-depth (\"master\") HD private key is provided for the entity owning this `HdKey`.\n\nNote, because hardened derivation requires knowledge of the private key, `HdKey` variables with `privateDerivationPath`s that include hardened derivation must configure `hdPublicKeyDerivationPath` to support HD public derivation.",
           "type": "string"
         },
         "publicDerivationPath": {
-          "description": "The derivation path used to derive this `HdKey`'s public key from the owning entity's HD public key. If not set, the public equivalent of `privateDerivationPath` is used. For the `privateDerivationPath` default of `m/i`, this is `M/i`.\n\nIf `privateDerivationPath` uses hardened derivation for some levels, but later derivation levels use non-hardened derivation, `publicDerivationPath` can be used to specify a public derivation path beginning from `hdPublicKeyDerivationPath` (i.e. `publicDerivationPath` should always be a non-hardened segment of `privateDerivationPath` that follows `hdPublicKeyDerivationPath`).\n\nThe first character must be `M` (public derivation), followed by sets of `/` and a number representing the child index used in the non-hardened derivation at that depth.\n\nFor example, if `privateDerivationPath` is `m/0'/i`, it is not possible to derive the equivalent public key with only the HD public key `M`. (The path \"`M/0'/i`\" is impossible.) However, given the HD public key for `m/0'`, it is possible to derive the public key of `m/0'/i` for any `i`. In this case, `hdPublicKeyDerivationPath` would be `m/0'` and `publicDerivationPath` would be the remaining `M/i`.",
+          "description": "The relative derivation path used to derive this `HdKey`'s public key from the owning entity's HD public key (configured via `hdPublicKeyDerivationPath`). If not set, the relative path (following the `m/` of `privateDerivationPath`) is used. For the `privateDerivationPath` default of `i`, this is `i`.\n\nIf `privateDerivationPath` uses hardened derivation for some levels, but later derivation levels use non-hardened derivation, `publicDerivationPath` can be used to specify a public derivation path beginning from `hdPublicKeyDerivationPath` (i.e. `publicDerivationPath` should always be a non-hardened segment of `privateDerivationPath` that follows `hdPublicKeyDerivationPath`).\n\nThe `publicDerivationPath` must be a relative HD derivation path: non-hardened positive integer child indexes (between `0` and `2147483647`, without any trailing `'`s) separated by `/`s.\n\nFor example, if `privateDerivationPath` is `m/0'/i`, it is not possible to derive the equivalent public key with only the HD public key `M`. (The path `M/0'/i` is impossible.) However, given the HD public key for `m/0'`, it is possible to derive the public key of `m/0'/i` for any `i`. In this case, `hdPublicKeyDerivationPath` would be `m/0'` and `publicDerivationPath` would be the remaining `i`.",
           "type": "string"
         },
         "type": {
           "const": "HdKey",
-          "description": "The `HdKey` (Hierarchical-Deterministic Key) type automatically manages key generation and mapping in a standard way. For greater control, use `Key`.",
           "type": "string"
         }
       },
@@ -157,16 +184,19 @@
       "additionalProperties": false,
       "properties": {
         "description": {
-          "description": "A single-line, human readable description for this key.",
+          "description": "A single-line, human readable description for this variable (for use in user interfaces).",
           "type": "string"
         },
         "name": {
-          "description": "A single-line, Title Case, human-readable name for this key.",
+          "description": "A single-line, Title Case, human-readable name for this variable (for use in user interfaces).",
           "type": "string"
+        },
+        "neverSignTwice": {
+          "description": "If set to `true`, indicates that this key should never be used to sign two different messages.\n\nThis is useful for contracts that use zero-confirmation escrow systems to guarantee against double-spend attempts. By indicating that the user could be subjected to losses if a key were used in multiple signatures, templates can ensure that wallet implementations apply appropriate safeguards around use of the key.\n\nDefaults to `false`.",
+          "type": "boolean"
         },
         "type": {
           "const": "Key",
-          "description": "The `Key` type provides fine-grained control over key generation and mapping. Most templates should instead use `HdKey`.\n\nAny HD (Hierarchical-Deterministic) derivation must be completed outside of the templating system and provided at the time of use.",
           "type": "string"
         }
       },
@@ -265,7 +295,7 @@
           "type": "object"
         }
       ],
-      "description": "A type that describes the configuration for a particular locking or unlocking bytecode within an wallet template scenario.\n\nBytecode may be specified as either a hexadecimal-encoded string or an object describing the required compilation.\n\nFor `sourceOutputs` and `transaction.inputs`, defaults to `{ script: [\"copy\"], overrides: {} }`. For `transaction.outputs`, defaults to `{ script: [\"copy\"], overrides: { \"hdKeys\": { \"addressIndex\": 1 } } }`."
+      "description": "A type that describes the configuration for a particular locking or unlocking bytecode within a wallet template scenario.\n\nBytecode may be specified as either a hexadecimal-encoded string or an object describing the required compilation.\n\nFor `sourceOutputs` and `transaction.inputs`, defaults to `{ script: [\"copy\"], overrides: {} }`. For `transaction.outputs`, defaults to `{ script: [\"copy\"], overrides: { \"hdKeys\": { \"addressIndex\": 1 } } }`."
     },
     "WalletTemplateScenarioData": {
       "additionalProperties": false,
@@ -275,7 +305,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "A map of full identifiers to CashAssembly scripts that compile to each identifier's value for this scenario. Allowing `bytecode` to be specified as scripts (rather than e.g. hex) offers greater power and flexibility.\n\nBytecode scripts have access to each other and all other template scripts and defined variables, however, cyclical references will produce an error at compile time. Also, because the results of these compilations will be used to generate the compilation context for this scenario, these scripts may not use compiler operations that themselves require access to compilation context (e.g. signatures).\n\nThe provided `fullIdentifier` should match the complete identifier for each item, e.g. `some_wallet_data`, `variable_id.public_key`, or `variable_id.signature.all_outputs`.\n\nAll `AddressData` and `WalletData` variables must be provided via `bytecode` (though the default scenario automatically includes reasonable values), and pre-computed results for operations of other variable types (e.g. `key.public_key`) may also be provided via this property.\n\nBecause each bytecode identifier may precisely match the identifier of the variable it defines for this scenario, references between these scripts must refer to the target script with a `_scenario.` prefix. E.g. to reference a sibling script `my_foo` from `my_bar`, the `my_bar` script must use the identifier `_scenario.my_foo`.",
+          "description": "A map of full identifiers to CashAssembly scripts that compile to each identifier's value for this scenario. Allowing `bytecode` to be specified as scripts (rather than e.g. hex) offers greater power and flexibility.\n\nBytecode scripts have access to each other and all other template scripts and defined variables, however, cyclical references will produce an error at compile time. Also, because the results of these compilations will be used to generate the compilation context for this scenario, these scripts may not use compiler operations that themselves require access to compilation context (e.g. signatures).\n\nThe provided `fullIdentifier` should match the complete identifier for each item, e.g. `some_wallet_data`, `variable_id.public_key`, or `variable_id.schnorr_signature.all_outputs`.\n\nAll `AddressData` and `WalletData` variables must be provided via `bytecode` (though the default scenario automatically includes reasonable values), and pre-computed results for operations of other variable types (e.g. `key.public_key`) may also be provided via this property.\n\nBecause each bytecode identifier may precisely match the identifier of the variable it defines for this scenario, references between these scripts must refer to the target script with a `_scenario.` prefix. E.g. to reference a sibling script `my_foo` from `my_bar`, the `my_bar` script must use the identifier `_scenario.my_foo`.",
           "type": "object"
         },
         "currentBlockHeight": {
@@ -330,7 +360,7 @@
     },
     "WalletTemplateScenarioInput": {
       "additionalProperties": false,
-      "description": "An example input used to define a scenario for an wallet template.",
+      "description": "An example input used to define a scenario for a wallet template.",
       "properties": {
         "outpointIndex": {
           "description": "The index of the output in the transaction from which this input is spent.\n\nIf undefined, this defaults to the same index as the input itself (so that by default, every outpoint in the produced transaction is different, even if an empty `outpointTransactionHash` is used for each transaction).",
@@ -366,7 +396,7 @@
     },
     "WalletTemplateScenarioOutput<false>": {
       "additionalProperties": false,
-      "description": "An example output used to define a scenario for an wallet template.",
+      "description": "An example output used to define a scenario for a wallet template.",
       "properties": {
         "lockingBytecode": {
           "$ref": "#/definitions/WalletTemplateScenarioBytecode",
@@ -394,7 +424,7 @@
                   "type": "string"
                 },
                 "commitment": {
-                  "description": "The commitment message included in the non-fungible token (of `category`) held in this output.\n\nIf undefined, this defaults to: `\"\"` (a zero-length commitment).",
+                  "description": "The hex-encoded commitment contents included in the non-fungible token held in this output.\n\nIf undefined, this defaults to: `\"\"` (a zero-length commitment).",
                   "type": "string"
                 }
               },
@@ -412,7 +442,7 @@
     },
     "WalletTemplateScenarioOutput<true>": {
       "additionalProperties": false,
-      "description": "An example output used to define a scenario for an wallet template.",
+      "description": "An example output used to define a scenario for a wallet template.",
       "properties": {
         "lockingBytecode": {
           "anyOf": [
@@ -453,7 +483,7 @@
                   "type": "string"
                 },
                 "commitment": {
-                  "description": "The commitment message included in the non-fungible token (of `category`) held in this output.\n\nIf undefined, this defaults to: `\"\"` (a zero-length commitment).",
+                  "description": "The hex-encoded commitment contents included in the non-fungible token held in this output.\n\nIf undefined, this defaults to: `\"\"` (a zero-length commitment).",
                   "type": "string"
                 }
               },
@@ -471,11 +501,11 @@
     },
     "WalletTemplateScenarioSourceOutput": {
       "$ref": "#/definitions/WalletTemplateScenarioOutput<true>",
-      "description": "A source output used by an wallet template scenario."
+      "description": "A source output used by a wallet template scenario."
     },
     "WalletTemplateScenarioTransactionOutput": {
       "$ref": "#/definitions/WalletTemplateScenarioOutput<false>",
-      "description": "A transaction output used to define an wallet template scenario transaction."
+      "description": "A transaction output used to define a wallet template scenario transaction."
     },
     "WalletTemplateScript": {
       "additionalProperties": false,
@@ -652,38 +682,20 @@
       "additionalProperties": false,
       "properties": {
         "description": {
-          "description": "A single-line, human readable description for this wallet data.",
+          "description": "A single-line, human readable description for this variable (for use in user interfaces).",
           "type": "string"
         },
         "name": {
-          "description": "A single-line, Title Case, human-readable name for this wallet data.",
+          "description": "A single-line, Title Case, human-readable name for this variable (for use in user interfaces).",
           "type": "string"
         },
         "type": {
           "const": "WalletData",
-          "description": "The `WalletData` type provides a static piece of data that should be collected once and stored at the time of wallet creation. `WalletData` should be persistent for the life of the wallet, rather than changing from locking script to locking script.\n\nFor address-specific data, use `AddressData`.",
           "type": "string"
         }
       },
       "required": ["type"],
       "type": "object"
-    },
-    "AuthenticationVirtualMachineIdentifier": {
-      "description": "Allowable identifiers for authentication virtual machine versions. The `BCH` prefix identifies the Bitcoin Cash network, the `XEC` prefix identifies the eCash network, the `BSV` prefix identifies the Bitcoin SV network, and the `BTC` prefix identifies the Bitcoin Core network. VM versions are named according to the date they were deployed on the indicated network.\n\nFor each network prefix, a `_SPEC` VM version is reserved to indicate that the template requires a custom, not-yet-deployed VM version (e.g. one or more CHIPs). By convention, templates marked for `_SPEC` VMs should indicate their requirements in the template description. After deployment of the `_SPEC` VM, when template compatibility is verified, the template's `supported` array should be updated to indicate compatibility with the live VM version.",
-      "enum": [
-        "BCH_2020_05",
-        "BCH_2021_05",
-        "BCH_2022_05",
-        "BCH_2023_05",
-        "BCH_SPEC",
-        "BSV_2020_02",
-        "BSV_SPEC",
-        "BTC_2017_08",
-        "BTC_SPEC",
-        "XEC_2020_05",
-        "XEC_SPEC"
-      ],
-      "type": "string"
     }
   }
 }

@@ -3,7 +3,6 @@ import { abbreviateStackItem } from '../common';
 import { ScriptEditorFrame } from '../editor-types';
 
 import {
-  AuthenticationErrorBch2023Additions,
   AuthenticationErrorBch2025Additions,
   AuthenticationErrorBchSpec,
   AuthenticationErrorBchSpecAdditions,
@@ -14,7 +13,6 @@ import { Popover } from '@blueprintjs/core';
 
 export type PossibleErrors =
   | AuthenticationErrorCommon
-  | AuthenticationErrorBch2023Additions
   | AuthenticationErrorBch2025Additions
   | AuthenticationErrorBchSpecAdditions;
 

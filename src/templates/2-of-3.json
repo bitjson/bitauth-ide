@@ -1,5 +1,5 @@
 {
-  "$schema": "https://ide.bitauth.com/authentication-template-v0.schema.json",
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
   "name": "2-of-3 Multisig",
   "entities": {
     "signer_1": {
@@ -62,6 +62,5 @@
     "BCH_2026_05",
     "BCH_SPEC",
     "BTC_2017_08"
-  ],
-  "version": 0
+  ]
 }

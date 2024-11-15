@@ -39,11 +39,11 @@ export const defaultState: AppState = {
   currentScenarioInternalId: undefined,
   lastSelectedScenarioInternalId: undefined,
   currentTemplate: defaultTemplate,
-  currentVmId: 'BCH_2023_05',
+  currentVmId: 'BCH_2025_05',
   evaluationViewerSettings: {
     abbreviateLongStackItems: true,
     groupStackItemsDeeperThan: 3,
-    supportBigInt: false,
+    supportBigInt: true,
     vmNumbersDisplayFormat: 'integer',
     reverseStack: false,
     showAlternateStack: false,
