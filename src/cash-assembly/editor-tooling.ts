@@ -25,16 +25,23 @@ export type MonacoMarkerDataRequired = {
   endColumn: number;
 };
 
+const isNotUndefined = <T>(value: T | undefined): value is T => {
+  return value !== undefined;
+};
 const getExecutionSpacers = (
   controlStack: IDESupportedProgramState['controlStack'],
 ) =>
-  controlStack.map((item) =>
-    typeof item === 'number'
-      ? EvaluationViewerSpacer.loop
-      : item
-        ? EvaluationViewerSpacer.executedConditional
-        : EvaluationViewerSpacer.skippedConditional,
-  );
+  controlStack
+    .map((item) =>
+      typeof item === 'object'
+        ? undefined
+        : typeof item === 'number'
+          ? EvaluationViewerSpacer.loop
+          : item
+            ? EvaluationViewerSpacer.executedConditional
+            : EvaluationViewerSpacer.skippedConditional,
+    )
+    .filter(isNotUndefined);
 
 /**
  * @param samples a list of samples ordered by their ending position

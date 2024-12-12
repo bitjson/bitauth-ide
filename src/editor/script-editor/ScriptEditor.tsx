@@ -824,7 +824,7 @@ export const ScriptEditor = (props: {
             className="script-tag locking-type-tag"
             title={lockingTypeDescriptions.standard}
           >
-            bare
+            P2S
           </span>
         )}
         {props.isPushed && scriptType === 'tested' && (

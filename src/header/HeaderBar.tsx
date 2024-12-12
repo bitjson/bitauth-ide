@@ -48,7 +48,7 @@ const ideModes: IDESupportedModes[] = [
 const vms: IDESupportedVirtualMachine[] = [
   { id: 'BCH_2023_05', name: 'BCH 2023 VM', disabled: false },
   { id: 'BCH_2025_05', name: 'BCH 2025 VM', disabled: false },
-  { id: 'BCH_2026_05', name: 'BCH 2026 VM', disabled: true },
+  { id: 'BCH_2026_05', name: 'BCH 2026 VM', disabled: false },
   { id: 'BCH_SPEC', name: 'BCH SPEC VM', disabled: false },
   { id: 'BTC_2017_08', name: 'BTC 2017 VM', disabled: true },
   { id: 'BSV_2020_02', name: 'BSV 2020 VM', disabled: true },

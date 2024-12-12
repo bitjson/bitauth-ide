@@ -3407,7 +3407,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "bitauth-ide@workspace:."
   dependencies:
-    "@bitauth/libauth": "npm:3.1.0-next.2"
+    "@bitauth/libauth": "npm:3.1.0-next.3"
     "@blueprintjs/core": "npm:^5.8.2"
     "@blueprintjs/icons": "npm:^5.7.0"
     "@blueprintjs/select": "npm:^5.0.23"

@@ -142,7 +142,7 @@ export type LockingType = WalletTemplateScriptLocking['lockingType'];
 export const lockingTypes: { label: string; value: LockingType }[] = [
   { label: 'P2SH20', value: 'p2sh20' },
   { label: 'P2SH32', value: 'p2sh32' },
-  { label: 'Bare (non-P2SH)', value: 'standard' },
+  { label: 'P2S', value: 'standard' },
 ];
 
 export const lockingTypeDescriptions: {
@@ -153,7 +153,7 @@ export const lockingTypeDescriptions: {
   p2sh32:
     'This is a P2SH32 script. The P2SH32-wrapping bytecode is automatically included during compilation.',
   standard:
-    'This is a bare (non-P2SH) script: it is compiled directly into the transaction output without P2SH-wrapping bytecode.',
+    'This is a P2S script: it is compiled directly into the transaction output without P2SH-wrapping bytecode.',
 };
 
 export type BaseScriptType =
