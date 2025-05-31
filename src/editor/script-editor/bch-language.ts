@@ -23,7 +23,6 @@ const disabledOpcodes = [
   'OP_VER',
   'OP_VERIF',
   'OP_VERNOTIF',
-  'OP_INVERT',
   'OP_RESERVED1',
   'OP_RESERVED2',
   'OP_2MUL',
