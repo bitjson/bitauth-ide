@@ -16,6 +16,7 @@ import {
   ComputedEditorState,
   EvaluationViewerHighlight,
   EvaluationViewerLine,
+  IDESupportedAuthenticationProgram,
   ProjectEditorMode,
   ScriptEditorFrame,
   StackItemIdentifyFunction,
@@ -24,17 +25,14 @@ import {
 import {
   CompilationResultResolveError,
   CompilationResultSuccess,
-  createCompiler,
-  createVirtualMachineBch2023,
-  createVirtualMachineBch2025,
-  createVirtualMachineBch2026,
-  createVirtualMachineBchSpec,
   encodeDataPush,
   EvaluationSample,
   extractBytecodeResolutions,
   extractEvaluationSamplesRecursive,
+  hexToBin,
   ResolvedSegmentScriptBytecode,
   ScriptReductionTraceScriptNode,
+  StackItemLabel,
   walletTemplateToCompilerConfiguration,
 } from '@bitauth/libauth';
 
@@ -79,6 +77,19 @@ export const computeEditorState = <
 >(
   state: AppState,
 ): ComputedEditorState<ProgramState> => {
+  try {
+    return attemptComputeEditorState(state);
+  } catch (e) {
+    console.error('Bitauth IDE error: failure in "computeEditorState":', e);
+    throw e; // (simply ignored higher up)
+  }
+};
+
+export const attemptComputeEditorState = <
+  ProgramState extends IDESupportedProgramState,
+>(
+  state: AppState,
+): ComputedEditorState<ProgramState> => {
   const {
     ideMode,
     currentEditingMode,
@@ -105,15 +116,6 @@ export const computeEditorState = <
   }
   const template = exportWalletTemplate(state.currentTemplate, true);
   const configuration = walletTemplateToCompilerConfiguration(template);
-  const vm =
-    state.currentVmId === 'BCH_2023_05'
-      ? createVirtualMachineBch2023()
-      : state.currentVmId === 'BCH_2025_05'
-        ? createVirtualMachineBch2025()
-        : state.currentVmId === 'BCH_2026_05'
-          ? createVirtualMachineBch2026()
-          : createVirtualMachineBchSpec();
-  const compiler = createCompiler(configuration);
 
   /**
    * Map variable InternalIds to entity InternalIds
@@ -285,12 +287,9 @@ export const computeEditorState = <
       state.currentTemplate.scriptsByInternalId[internalId]!.script,
   );
 
-  const scenarioGeneration = compiler.generateScenario({
-    debug: true,
-    lockingScriptId,
-    unlockingScriptId,
-    scenarioId,
-  });
+  const scenarioGeneration = state.debug.isProcessing
+    ? 'Generating scenario...'
+    : state.debug.result.scenarioGeneration;
 
   const { lockingScriptCompilation, unlockingScriptCompilation } =
     typeof scenarioGeneration !== 'string'
@@ -303,14 +302,16 @@ export const computeEditorState = <
           unlockingScriptCompilation: undefined,
         };
 
-  const { debugTrace, verifyResult } =
+  const program: IDESupportedAuthenticationProgram | undefined =
     typeof scenarioGeneration !== 'string' &&
     typeof scenarioGeneration.scenario !== 'string'
-      ? {
-          debugTrace: vm.debug(scenarioGeneration.scenario.program),
-          verifyResult: vm.verify(scenarioGeneration.scenario.program),
-        }
-      : { debugTrace: undefined, verifyResult: undefined };
+      ? scenarioGeneration.scenario.program
+      : undefined;
+
+  const { debugTrace, verifyResult } =
+    state.debug.isProcessing || program === undefined
+      ? { debugTrace: undefined, verifyResult: undefined }
+      : { ...state.debug.result }; // Coverage runtime bug requires explicit destructuring here
 
   const resolvedIdentifiers = [
     lockingScriptCompilation,
@@ -324,7 +325,13 @@ export const computeEditorState = <
               [key: string]: Uint8Array;
             }>(
               (all, resolution) =>
-                ['variable', 'script', 'UTF8Literal'].includes(resolution.type)
+                ['variable', 'script', 'UTF8Literal'].includes(
+                  resolution.type,
+                ) &&
+                !(
+                  resolution.type === 'script' &&
+                  resolution.text.endsWith('.check')
+                )
                   ? { ...all, [resolution.text]: resolution.bytecode }
                   : all,
               {},
@@ -344,7 +351,8 @@ export const computeEditorState = <
     {},
   );
 
-  const stackItemIdentifyIgnoreList = ['0', '1'];
+  const zero = '';
+  const stackItemIdentifyIgnoreList = [zero, '1'];
   const identifyStackItems: StackItemIdentifyFunction = (item) =>
     (!stackItemIdentifyIgnoreList.includes(item.toString()) &&
       bytecodeToIdentifierMap[item.toString()]) ??
@@ -355,6 +363,8 @@ export const computeEditorState = <
    * to samples.
    */
   let remainingStates = debugTrace as ProgramState[] | undefined;
+  let lastTestedState: ProgramState | undefined;
+  let ipOffset = 0;
 
   const scriptEditorFrames = scriptEditorEvaluationTrace.map<
     ScriptEditorFrame<ProgramState>
@@ -368,20 +378,30 @@ export const computeEditorState = <
           : script.type === 'tested'
             ? (
                 (
-                  lockingScriptCompilation as CompilationResultResolveError<ProgramState>
-                ).resolve[0] as ResolvedSegmentScriptBytecode<ProgramState>
-              ).source
+                  lockingScriptCompilation as
+                    | CompilationResultResolveError<ProgramState>
+                    | undefined
+                )?.resolve[0] as
+                  | ResolvedSegmentScriptBytecode<ProgramState>
+                  | undefined
+              )?.source
             : script.type === 'test-check'
               ? (
                   (
-                    lockingScriptCompilation as CompilationResultResolveError<ProgramState>
-                  ).resolve[1] as ResolvedSegmentScriptBytecode<ProgramState>
-                ).source
+                    lockingScriptCompilation as
+                      | CompilationResultResolveError<ProgramState>
+                      | undefined
+                  )?.resolve[1] as
+                    | ResolvedSegmentScriptBytecode<ProgramState>
+                    | undefined
+                )?.source
               : lockingScriptCompilation;
 
     let frameSamples: EvaluationSample<ProgramState>[] | undefined;
     let evaluationLines: EvaluationViewerLine<ProgramState>[] | undefined;
-    if (debugTrace !== undefined) {
+    let labels: StackItemLabel[] | undefined;
+
+    if (remainingStates !== undefined && compilation !== undefined) {
       const successfulCompilation =
         compilation as CompilationResultSuccess<ProgramState>;
       const lastSourceLine = successfulCompilation.parse.end.line;
@@ -396,49 +416,57 @@ export const computeEditorState = <
           /**
            * Trim off state from virtualized (empty) unlocking script.
            */
-          remainingStates = remainingStates!.slice(1);
+          remainingStates = remainingStates.slice(1);
         }
         const p2shStates = 5;
         /**
          * Trim off P2SH states – we don't show that part in the IDE. (It's always
          * the same, and the compiler should never mess it up.)
          */
-        remainingStates = remainingStates!.slice(p2shStates);
+        remainingStates = remainingStates.slice(p2shStates);
       } else if (script.type === 'test-check' && !isPushed) {
         /**
          * Since the actual locking script and test-check script are
          * concatenated for evaluation, the "initial state" for the check script
          * is missing, shifting all remaining states back one sample. To avoid
-         * this, we simulate the "initial state" by duplicating the first
-         * remaining state before extracting samples.
+         * this, we simulate the "initial state" by duplicating the last state
+         * of the previous frame.
          *
          * However, if a tested script is "pushed" for testing, this effect is
          * offset by the pushed sample, so duplication can be skipped.
          */
-        remainingStates = (
-          remainingStates === undefined || remainingStates.length === 0
+        const testCheckShiftedStates =
+          remainingStates.length === 0
             ? []
-            : [remainingStates[0], ...remainingStates]
-        ) as ProgramState[];
+            : [lastTestedState, ...remainingStates];
+        remainingStates = testCheckShiftedStates as ProgramState[];
+        ipOffset = lastTestedState!.ip;
       }
       const nodes =
         isPushed && script.type === 'tested'
           ? wrapScriptReductionInPush(reduction).script
           : reduction.script;
       const evaluationRange = reduction.range;
-      const { samples, unmatchedStates } = extractEvaluationSamplesRecursive({
-        evaluationRange,
-        nodes,
-        trace: remainingStates!,
-      });
+      const { samples, unmatchedStates, labeledStackItems } =
+        extractEvaluationSamplesRecursive({
+          evaluationRange,
+          ipOffset,
+          nodes,
+          trace: remainingStates,
+        });
       remainingStates = unmatchedStates;
       frameSamples = samples;
+      labels = labeledStackItems;
       const linesNeeded = lastSourceLine + 2;
       evaluationLines = samplesToEvaluationLines(
         samples,
         linesNeeded,
         state.evaluationViewerSettings.loopViewingIndexes,
       );
+
+      if (script.type === 'tested') {
+        lastTestedState = frameSamples[frameSamples.length - 1]!.state;
+      }
     }
 
     const scriptName =
@@ -447,9 +475,17 @@ export const computeEditorState = <
             .name
         : script.name;
 
+    /**
+     * Simply add any extracted labels to the map used by `identifyStackItems`.
+     */
+    labels?.forEach(({ label, value }) => {
+      bytecodeToIdentifierMap[hexToBin(value).toString()] = label;
+    });
+
     return {
       compilation,
-      // TODO: indicate the offset of the script in compilation for check scripts?
+      ipOffset,
+      labels,
       samples: frameSamples,
       script: script.script,
       scriptId: script.id,
@@ -498,6 +534,7 @@ export const computeEditorState = <
   return {
     debugTrace,
     editorMode,
+    isProcessing: state.debug.isProcessing,
     isPushed,
     lockingType,
     identifyStackItems,
@@ -507,5 +544,12 @@ export const computeEditorState = <
     scriptEditorEvaluationTrace,
     scriptEditorFrames,
     variableDetails,
+    workerDetails: {
+      compilerConfiguration: configuration,
+      lockingScriptId,
+      unlockingScriptId,
+      scenarioId,
+      program,
+    },
   };
 };

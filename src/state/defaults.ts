@@ -21,7 +21,6 @@ export const emptyTemplate: WalletTemplate = {
     'BCH_2026_05',
     'BCH_SPEC',
   ] as IDESupportedVM[],
-  version: 0 as const,
 };
 
 const defaultTemplate = ideImportWalletTemplate(emptyTemplate);
@@ -53,6 +52,11 @@ export const defaultState: AppState = {
   activeDialog: ActiveDialog.none,
   templateLoadTime: undefined,
   pendingTemplateImport: undefined,
+  debug: {
+    isProcessing: true,
+    compilationId: 0,
+    result: undefined,
+  },
   wallets: {
     // cspell: disable
     walletsByInternalId: {

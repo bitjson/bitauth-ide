@@ -1,5 +1,6 @@
 /* eslint-disable no-case-declarations, @typescript-eslint/no-unsafe-member-access */
 
+import { DebugWorkerResult } from '../editor/debug-worker';
 import { createInsecureUuidV4, unknownValue } from '../utils';
 
 import { defaultState, emptyTemplate } from './defaults';
@@ -561,6 +562,17 @@ class App extends ImmerReducer<AppState> {
     this.draftState.currentVmId = vm;
     this.draftState.evaluationViewerSettings.supportBigInt =
       vm !== 'BCH_2023_05';
+  }
+  startDebugging() {
+    this.draftState.debug.isProcessing = true;
+    this.draftState.debug.compilationId += 1;
+    this.draftState.debug.result = undefined;
+  }
+  finishDebugging(payload: DebugWorkerResult) {
+    if (payload.compilationId === this.draftState.debug.compilationId) {
+      this.draftState.debug.result = payload.result;
+      this.draftState.debug.isProcessing = false;
+    }
   }
 }
 

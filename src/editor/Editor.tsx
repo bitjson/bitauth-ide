@@ -6,10 +6,14 @@ import {
   CurrentScripts,
   EvaluationViewerSettings,
   IDESupportedProgramState,
+  IDESupportedVM,
 } from '../state/types';
 import { unknownValue } from '../utils';
 
 import { getCurrentScripts, getUsedIds } from './common';
+import { DebugWorkerResult } from './debug-worker';
+// eslint-disable-next-line import/no-unresolved
+import DebugWorker from './debug-worker.ts?worker';
 import { ImportExportDialog } from './dialogs/import-export-dialog/ImportExportDialog';
 import { ImportScriptDialog } from './dialogs/import-script-dialog/ImportScriptDialog';
 import { NewEntityDialog } from './dialogs/new-entity-dialog/NewEntityDialog';
@@ -33,7 +37,8 @@ import { WalletEditor } from './wallet/wallet-editor/WalletEditor';
 import { WalletHistoryExplorer } from './wallet/wallet-history-explorer/WalletHistoryExplorer';
 import { WelcomePane } from './welcome-pane/WelcomePane';
 
-import { useCallback, useEffect, useState } from 'react';
+import { stringify } from '@bitauth/libauth';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Mosaic } from 'react-mosaic-component';
 import { connect } from 'react-redux';
 
@@ -60,6 +65,8 @@ type EditorDispatch = {
   changeEvaluationViewerSettings: typeof ActionCreators.changeEvaluationViewerSettings;
   importExport: typeof ActionCreators.importExport;
   switchScenario: typeof ActionCreators.switchScenario;
+  startDebugging: typeof ActionCreators.startDebugging;
+  finishDebugging: typeof ActionCreators.finishDebugging;
 };
 
 type EditorProps<ProgramState extends IDESupportedProgramState> = {
@@ -67,6 +74,8 @@ type EditorProps<ProgramState extends IDESupportedProgramState> = {
   currentlyEditingInternalId: string | undefined;
   currentScripts: CurrentScripts;
   activeDialog: ActiveDialog;
+  currentVmId: IDESupportedVM;
+  debug: AppState['debug'];
   evaluationViewerSettings: EvaluationViewerSettings;
   usedIds: string[];
 } & EditorDispatch;
@@ -78,6 +87,8 @@ export const Editor = connect(
     currentScripts: getCurrentScripts(state),
     activeDialog: state.activeDialog,
     evaluationViewerSettings: state.evaluationViewerSettings,
+    currentVmId: state.currentVmId,
+    debug: state.debug,
     usedIds: getUsedIds(state),
   }),
   {
@@ -92,6 +103,8 @@ export const Editor = connect(
       ActionCreators.changeEvaluationViewerSettings,
     importExport: ActionCreators.importExport,
     switchScenario: ActionCreators.switchScenario,
+    startDebugging: ActionCreators.startDebugging,
+    finishDebugging: ActionCreators.finishDebugging,
   },
 )((props: EditorProps<IDESupportedProgramState>) => {
   const [projectExplorerWidth, setProjectExplorerWidth] = useState(21);
@@ -151,6 +164,53 @@ export const Editor = connect(
     viewerRefCallbackFrame2,
     viewerRefCallbackFrame3,
   ];
+  const workerRef = useRef<Worker>();
+  const lastKey = useRef<string>();
+
+  const { finishDebugging } = props;
+  useEffect(() => {
+    workerRef.current = new DebugWorker();
+    workerRef.current.onmessage = (e: MessageEvent<DebugWorkerResult>) => {
+      finishDebugging(e.data);
+    };
+    return () => {
+      workerRef.current?.terminate();
+    };
+  }, [finishDebugging]);
+
+  const { computed, currentVmId, startDebugging, debug: debugState } = props;
+  useEffect(() => {
+    if (
+      computed.editorMode === ProjectEditorMode.isolatedScriptEditor ||
+      computed.editorMode === ProjectEditorMode.scriptPairEditor ||
+      computed.editorMode === ProjectEditorMode.testedScriptEditor
+    ) {
+      const scriptMode = computed;
+      const key = stringify(
+        {
+          vmId: currentVmId,
+          config: scriptMode.workerDetails.compilerConfiguration,
+          lockingScriptId: scriptMode.workerDetails.lockingScriptId,
+          unlockingScriptId: scriptMode.workerDetails.unlockingScriptId,
+          scenarioId: scriptMode.workerDetails.scenarioId,
+        },
+        0,
+      );
+      if (key !== lastKey.current) {
+        lastKey.current = key;
+        const compilationId = debugState.compilationId + 1;
+        startDebugging();
+        workerRef.current?.postMessage({
+          compilerConfiguration: scriptMode.workerDetails.compilerConfiguration,
+          lockingScriptId: scriptMode.workerDetails.lockingScriptId,
+          unlockingScriptId: scriptMode.workerDetails.unlockingScriptId,
+          scenarioId: scriptMode.workerDetails.scenarioId,
+          vmId: currentVmId,
+          compilationId,
+        });
+      }
+    }
+  }, [computed, currentVmId, startDebugging, debugState.compilationId]);
 
   useEffect(() => {
     const setKey = (value: unknown) => {
@@ -217,6 +277,7 @@ export const Editor = connect(
       debugTrace={computed.debugTrace}
       evaluationViewerSettings={props.evaluationViewerSettings}
       importExport={props.importExport}
+      isProcessing={computed.isProcessing}
       scenarioDetails={computed.scenarioDetails}
       showControls={indexFromTop === 0}
       switchScenario={props.switchScenario}

@@ -200,7 +200,7 @@ const completableOpcodes = [
   ...otherOpcodes,
 ];
 
-const opcodeSuggestions = (range: Range) =>
+export const opcodeSuggestions = (range: Range) =>
   completableOpcodes.map<Monaco.languages.CompletionItem>((opcode) => ({
     label: opcode,
     detail: descriptions[opcode] === undefined ? '' : descriptions[opcode]![1],
@@ -210,29 +210,6 @@ const opcodeSuggestions = (range: Range) =>
     insertText: opcode,
     range,
   }));
-
-export const opcodeCompletionItemProviderBCH: Monaco.languages.CompletionItemProvider =
-  {
-    triggerCharacters: [''],
-    provideCompletionItems: (model, position) => {
-      const query = model.getWordAtPosition(position);
-      const columns = model.getWordUntilPosition(position);
-      const range: Range = {
-        startColumn: columns.startColumn,
-        endColumn: columns.endColumn,
-        startLineNumber: position.lineNumber,
-        endLineNumber: position.lineNumber,
-      };
-      const suggestions =
-        query !== null &&
-        (query.word === 'O' ||
-          query.word === 'OP' ||
-          query.word.startsWith('OP_'))
-          ? opcodeSuggestions(range)
-          : [];
-      return { suggestions };
-    },
-  };
 
 export const getKeyOperationDescriptions = (parameter?: string) => {
   const map: { [op in CompilerOperationsKeyBch]: [string, string] } = {

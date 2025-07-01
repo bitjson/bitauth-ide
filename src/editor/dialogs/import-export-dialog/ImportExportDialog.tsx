@@ -250,7 +250,9 @@ export const ImportExportDialog = connect(
                 return;
               }
               const checkMarkers = () => {
-                const markers = monaco.editor.getModelMarkers({});
+                const markers = monaco.editor.getModelMarkers({
+                  resource: model.uri,
+                });
                 setErrorCount(markers.length);
               };
               /**
@@ -305,7 +307,7 @@ export const ImportExportDialog = connect(
             )}
           </div>
           <Button
-            disabled={template === props.WalletTemplate}
+            // disabled={template === props.WalletTemplate}
             className={
               errorCount !== 0 ||
               errorMessage !== '' ||
@@ -314,6 +316,10 @@ export const ImportExportDialog = connect(
                 : ''
             }
             onClick={() => {
+              if (template === props.WalletTemplate) {
+                setErrorMessage(`The template hasn't been modified.`);
+                return;
+              }
               let parsed: unknown;
               try {
                 parsed = JSON.parse(template);

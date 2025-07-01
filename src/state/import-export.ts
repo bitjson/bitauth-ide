@@ -566,6 +566,5 @@ export const exportWalletTemplate = (
     supported: [...currentTemplate.supportedVirtualMachines].sort((a, b) =>
       a.localeCompare(b),
     ),
-    version: 0,
   };
 };

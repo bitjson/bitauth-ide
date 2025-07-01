@@ -11,7 +11,9 @@ import {
   AuthenticationProgramCommon,
   CompilationResult,
   EvaluationSample,
+  StackItemLabel,
   WalletTemplateScriptLocking,
+  walletTemplateToCompilerConfiguration,
 } from '@bitauth/libauth';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 
@@ -170,6 +172,11 @@ export type ProjectExplorerTreeNode = {
 export type ScriptEditorFrame<ProgramState extends IDESupportedProgramState> = {
   monacoModel?: monacoEditor.editor.ITextModel;
   /**
+   * The `ip` offset of `test-check` scripts.
+   */
+  ipOffset: number | undefined;
+  labels: StackItemLabel[] | undefined;
+  /**
    * `samples` is undefined if there are compilation errors.
    */
   samples: EvaluationSample<ProgramState>[] | undefined;
@@ -235,6 +242,14 @@ export type EditorStateScriptMode<
     | ProjectEditorMode.isolatedScriptEditor
     | ProjectEditorMode.testedScriptEditor
     | ProjectEditorMode.scriptPairEditor;
+  /**
+   * Set to `undefined` if no compilations were successful (so the previous
+   * StackItemIdentifyFunction can continue to be used.)
+   */
+  identifyStackItems: StackItemIdentifyFunction | undefined;
+  isProcessing: boolean;
+  isPushed: boolean;
+  lockingType: WalletTemplateScriptLocking['lockingType'];
   scriptEditorFrames: ScriptEditorFrame<ProgramState>[];
   /**
    * An array of the internalIds of scripts which are part of this evaluation.
@@ -247,14 +262,16 @@ export type EditorStateScriptMode<
    * the EvaluationViewer to recognize viable updates to its cache.
    */
   scriptEditorEvaluationSource: string[];
-  lockingType: WalletTemplateScriptLocking['lockingType'];
-  isPushed: boolean;
-  /**
-   * Set to `undefined` if no compilations were successful (so the previous
-   * StackItemIdentifyFunction can continue to be used.)
-   */
-  identifyStackItems: StackItemIdentifyFunction | undefined;
-  variableDetails: VariableDetails;
   scriptDetails: ScriptDetails;
   scenarioDetails: ScenarioDetails;
+  variableDetails: VariableDetails;
+  workerDetails: {
+    program: IDESupportedAuthenticationProgram | undefined;
+    compilerConfiguration: ReturnType<
+      typeof walletTemplateToCompilerConfiguration
+    >;
+    lockingScriptId: string | undefined;
+    unlockingScriptId: string | undefined;
+    scenarioId: string | undefined;
+  };
 };

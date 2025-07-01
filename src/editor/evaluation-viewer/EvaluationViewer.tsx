@@ -233,6 +233,8 @@ const EvaluationLine = ({
   lookup,
   settings,
   changeEvaluationViewerSettings,
+  setStackItemDifferState,
+  stackItemDifferState,
 }: {
   hasError: boolean;
   hasActiveCursor: boolean;
@@ -241,6 +243,10 @@ const EvaluationLine = ({
   lookup?: StackItemIdentifyFunction;
   settings: EvaluationViewerSettings;
   changeEvaluationViewerSettings: typeof ActionCreators.changeEvaluationViewerSettings;
+  stackItemDifferState: StackItemDifferState;
+  setStackItemDifferState: React.Dispatch<
+    React.SetStateAction<StackItemDifferState>
+  >;
 }) => {
   const firstSkippedSpacer =
     line.spacers === undefined
@@ -292,8 +298,10 @@ const EvaluationLine = ({
             }`
       }`}
       onClick={() => {
-        console.log(`ProgramState after line #${lineNumber}:`);
-        console.log(line.state);
+        if (stackItemDifferState.lineNumber !== lineNumber) {
+          console.log(`ProgramState after line #${lineNumber}:`);
+          console.log(line.state);
+        }
       }}
     >
       {line.spacers?.slice(0, sliceSpacersAtIndex).map((type, index) =>
@@ -390,7 +398,67 @@ const EvaluationLine = ({
           return stackItem(
             itemIndex,
             elideHex(hex),
-            <span className={`stack-item ${type}`}>
+            <span
+              className={`stack-item ${type}`}
+              onClick={() => {
+                if (
+                  stackItemDifferState.diffNext &&
+                  !(
+                    stackItemDifferState.lineNumber === lineNumber &&
+                    stackItemDifferState.itemIndex === itemIndex
+                  )
+                ) {
+                  const expected = stackItemDifferState.hex;
+                  const got = hex;
+                  const diff = diffHexBytes(expected, got);
+                  const [formatted1, ...styles1] = buildStyledLog(
+                    expected,
+                    diff,
+                    'expected',
+                  );
+                  const [formatted2, ...styles2] = buildStyledLog(
+                    got,
+                    diff,
+                    'got',
+                  );
+                  console.log(
+                    `Comparing stack items – Expected: line ${lineNumber}, item ${itemIndex} | Got: line ${lineNumber}, item ${itemIndex}
+%cExpected:%c  ${formatted1}
+%cGot:%c ${formatted2}`,
+                    highlight,
+                    fade,
+                    ...styles1,
+                    highlight,
+                    fade,
+                    ...styles2,
+                  );
+                  console.log('diff:', diff);
+                  setStackItemDifferState(initialStackItemDifferState);
+                }
+                if (
+                  stackItemDifferState.lineNumber === lineNumber &&
+                  stackItemDifferState.itemIndex === itemIndex &&
+                  stackItemDifferState.hex === hex
+                ) {
+                  console.log(
+                    `Diff viewer: set multi-clicked stack item (line ${lineNumber}, item ${itemIndex}) as "Expected". Click on another stack item to diff the two items.`,
+                  );
+                  setStackItemDifferState({
+                    diffNext: true,
+                    lineNumber,
+                    itemIndex,
+                    hex,
+                  });
+                } else {
+                  setStackItemDifferState({
+                    diffNext: false,
+                    lineNumber,
+                    itemIndex,
+                    hex,
+                  });
+                }
+              }}
+            >
               {settings.abbreviateLongStackItems
                 ? abbreviateStackItem(label)
                 : label}
@@ -400,6 +468,76 @@ const EvaluationLine = ({
       )}
     </div>
   );
+};
+
+type DiffSegment = { i: number; expected: string; got: string };
+
+const diffHexBytes = (
+  expectedHex: string,
+  receivedHex: string,
+): DiffSegment[] => {
+  const segments: DiffSegment[] = [];
+  const maxChars = Math.max(expectedHex.length, receivedHex.length);
+
+  for (let pos = 0; pos < maxChars; pos += 2) {
+    const expectedByte = expectedHex.slice(pos, pos + 2);
+    const receivedByte = receivedHex.slice(pos, pos + 2);
+
+    if (expectedByte !== receivedByte) {
+      const byteIndex = pos / 2;
+      const last = segments[segments.length - 1];
+      last && last.i + last.expected.length / 2 === byteIndex
+        ? ((last.expected += expectedByte), (last.got += receivedByte))
+        : segments.push({
+            i: byteIndex,
+            expected: expectedByte,
+            got: receivedByte,
+          });
+    }
+  }
+  return segments;
+};
+
+const fade = 'color:#888;';
+const highlight = 'font-weight:bold;';
+const buildStyledLog = (
+  hex: string,
+  diffs: DiffSegment[],
+  side: 'expected' | 'got',
+): [string, ...string[]] => {
+  let fmt = '';
+  const styles: string[] = [];
+  let cursor = 0;
+  for (const { i, expected, got } of diffs) {
+    const diffBytes = side === 'expected' ? expected : got;
+    const start = i * 2;
+    if (start > cursor) {
+      const slice = hex.slice(cursor, start);
+      fmt += `%c${slice}`;
+      styles.push(fade);
+    }
+    fmt += `%c${diffBytes}`;
+    styles.push(highlight);
+    cursor = start + diffBytes.length;
+  }
+  if (cursor < hex.length) {
+    fmt += `%c${hex.slice(cursor)}`;
+    styles.push(fade);
+  }
+  return [fmt, ...styles];
+};
+
+type StackItemDifferState = {
+  diffNext: boolean;
+  lineNumber: number;
+  itemIndex: number;
+  hex: string;
+};
+const initialStackItemDifferState: StackItemDifferState = {
+  diffNext: false,
+  lineNumber: 0,
+  itemIndex: 0,
+  hex: '',
 };
 
 const emptyEvaluation = [] as EvaluationViewerLine[];
@@ -623,7 +761,9 @@ export const ViewerControls = ({
               </p>
               <code className="generated-scenario">
                 <pre>
-                  {stringify(scenarioDetails.generatedScenario.scenario)}
+                  {scenarioDetails.generatedScenario === undefined
+                    ? 'Generating scenario...'
+                    : stringify(scenarioDetails.generatedScenario.scenario)}
                 </pre>
               </code>
             </div>
@@ -888,6 +1028,7 @@ export const EvaluationViewer = (props: {
   viewerRef: (viewer: HTMLDivElement | null) => void;
   showControls: boolean;
   scenarioDetails: ScenarioDetails;
+  isProcessing: boolean;
 }) => {
   const { evaluationSource, evaluationTrace, frame, lookup } =
     props.computedState;
@@ -898,6 +1039,8 @@ export const EvaluationViewer = (props: {
   const [cachedLookup, setCachedLookup] = useState<{
     lookup: StackItemIdentifyFunction | undefined;
   }>(emptyLookup);
+  const [stackItemDifferState, setStackItemDifferState] =
+    useState<StackItemDifferState>(initialStackItemDifferState);
 
   if (evaluationTrace.join() !== cachedEvaluationTrace.join()) {
     setCachedEvaluation(emptyEvaluation);
@@ -917,6 +1060,7 @@ export const EvaluationViewer = (props: {
 
   const cacheIsAvailable = cachedEvaluation.length !== 0;
   const showCached = hasError && cacheIsAvailable;
+  const fadeCached = showCached; // && props.isProcessing; // TODO: props.isProcessing should be false for compilation errors in tested scripts
   const evaluation = showCached ? cachedEvaluation : evaluationLines;
   const activeLookup = showCached ? cachedLookup.lookup : lookup;
 
@@ -925,7 +1069,7 @@ export const EvaluationViewer = (props: {
       className={`EvaluationViewer EvaluationViewer-${frame.scriptType}`}
       ref={props.viewerRef}
     >
-      <div className={`content${showCached ? ' cached' : ''}`}>
+      <div className={`content${fadeCached ? ' cached' : ''}`}>
         {evaluation && evaluation.length > 0 ? (
           <div>
             <div className="header-bar">
@@ -955,6 +1099,8 @@ export const EvaluationViewer = (props: {
                     changeEvaluationViewerSettings={
                       props.changeEvaluationViewerSettings
                     }
+                    stackItemDifferState={stackItemDifferState}
+                    setStackItemDifferState={setStackItemDifferState}
                   />
                 )}
               </div>
@@ -973,6 +1119,8 @@ export const EvaluationViewer = (props: {
                   changeEvaluationViewerSettings={
                     props.changeEvaluationViewerSettings
                   }
+                  stackItemDifferState={stackItemDifferState}
+                  setStackItemDifferState={setStackItemDifferState}
                 />
               ))}
             </div>

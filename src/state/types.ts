@@ -92,10 +92,12 @@ export type ScenarioDetails = {
       };
   /**
    * The generated scenario or scenario generation error for this evaluation.
+   * Undefined before generation has completed.
    */
   generatedScenario:
     | ScenarioGenerationDebuggingResult<IDESupportedProgramState>
-    | string;
+    | string
+    | undefined;
   /**
    * A listing of all available scenarios, including the currently active one.
    * If `currentScenario` is undefined, this should be an empty list (since
@@ -371,6 +373,24 @@ export type IDEWallets = {
   utxosByChainPath: { [internalId: string]: IDEUTXOs };
 };
 
+export type DebugDetails =
+  | {
+      isProcessing: true;
+      compilationId: number;
+      result: undefined;
+    }
+  | {
+      isProcessing: false;
+      compilationId: number;
+      result: {
+        debugTrace: IDESupportedProgramState[];
+        verifyResult: string | true;
+        scenarioGeneration:
+          | string
+          | ScenarioGenerationDebuggingResult<IDESupportedProgramState>;
+      };
+    };
+
 export type AppState = {
   ideMode: IDEMode;
   /**
@@ -435,6 +455,7 @@ export type AppState = {
    * display the pending import rather than the default empty template.
    */
   pendingTemplateImport: string | undefined;
+  debug: DebugDetails;
 };
 
 export type CurrentScripts = {

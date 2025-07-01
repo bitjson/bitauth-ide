@@ -72,6 +72,10 @@ export default defineConfig({
     cssMinify: 'lightningcss',
     chunkSizeWarningLimit: 1000000,
   },
+  worker: {
+    format: 'es',
+    plugins: () => [],
+  },
   optimizeDeps: {
     esbuildOptions: {
       supported: {
